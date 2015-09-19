@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 void cfun(const void* depth_array, int xsize, int ysize,
-        void* outdatav) {
+        void* pixelvalues) {
     const double * indata = (double *) indatav;
     double * outdata = (double *) outdatav;
     int i;
