@@ -19,7 +19,7 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
 
         // calculate gradient offset:
         int height = 255 - depth_array[i];
-        int height_color_range_min = 0;
+        int height_color_range_min = 30;
         int height_color_range_max = 120;
         float height_color_value = ((float)(height - height_color_range_min))/
             ((float)(height_color_range_max - height_color_range_min));
