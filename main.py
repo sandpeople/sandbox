@@ -28,7 +28,7 @@ def get_image():
         img = get_depth()
     except TypeError:
         # apparently, no kinect around. take static test image instead:
-        img = cv2.imread('kinect.png',0)
+        img = cv2.imread('images/kinect.png',0)
     return img
 
 # create cimg buffer in according format:
