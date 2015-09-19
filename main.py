@@ -11,6 +11,7 @@ offset=3.5
 run=True
 gradient=cv2.imread('gradient.bmp',1)
 cv.NamedWindow('Depth')
+cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN)
 
 def get_depth():
     img=frame_convert.pretty_depth(sync_get_depth()[0])
