@@ -4,6 +4,7 @@ import cv2.cv as cv
 import cv2
 import numpy as np
 import frame_convert
+import sys
 
 height=80
 offset=3.5
