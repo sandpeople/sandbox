@@ -21,19 +21,27 @@ def get_depth():
     img = frame_convert.pretty_depth(sync_get_depth()[0])
     return img
 
-cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-while run is True:
+def get_image():
     # take kinect image if we have one:
     try:
         img = get_depth()
     except TypeError:
         # apparently, no kinect around. take static test image instead:
         img = cv2.imread('kinect.png',0)
+    return img
+
+# create cimg buffer in according format:
+img = get_image()
+cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
+while run is True:
+    # take kinect image if we have one:
+    img = get_image()
     #print("Array type of incoming image: " + str(img.dtype))
     #print("Array type of outcoming image: " + str(cimg.dtype)
 
 
-)   #print "gradient:%s img:%s cimg:%s" %(gradient.shape, img.shape, cimg.shape)
+    #print "gradient:%s img:%s cimg:%s" %(gradient.shape, img.shape, cimg.shape)
     #print "gradient[10,100]: %s wert: %s" %(gradient[10,100], img[10,100])
     for x in range(0, img.shape[0]):
         for y in range(0, img.shape[1]):
