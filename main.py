@@ -22,11 +22,20 @@ def get_depth():
     img = frame_convert.pretty_depth(sync_get_depth()[0])
     return img
 
+# check if we have a kinect:
+no_kinect = False
+try:
+    img = get_depth()
+except TypeError:
+    # nope, no kinect.
+    no_kinect = True
+
 def get_image():
+    global no_kinect
     # take kinect image if we have one:
-    try:
+    if not no_kinect:
         img = get_depth()
-    except TypeError:
+    else:
         # apparently, no kinect around. take static test image instead:
         img = cv2.imread('images/kinect.png',0)
     return img

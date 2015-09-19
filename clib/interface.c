@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <SDL2/SDL_image.h>
@@ -26,11 +27,15 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
         int gradient_abs_y_pos = 5;
         int gradient_abs_x_pos = ((float)(gradient_relative_x_pos *
             ((float)gradient_x)));
+        
         // truncate position:
         if (gradient_abs_x_pos < 0) gradient_abs_x_pos = 0;
         if (gradient_abs_x_pos >= gradient_x) {
             gradient_abs_x_pos = gradient_x - 1;
         }
+        assert(gradient_abs_y_pos < gradient_y && gradient_abs_y_pos >= 0);
+        assert(gradient_abs_x_pos < gradient_x && gradient_abs_x_pos >= 0);
+        assert(gradient_abs_x_pos < 256); 
 
         // get gradient color:
         int baseindex = 3 * (gradient_abs_x_pos +
@@ -44,6 +49,5 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
         output_colors[offset+1] = gradient_c1;
         output_colors[offset+2] = gradient_c2;
     }
-    printf("processing complete\n");
 }
 

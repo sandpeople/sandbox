@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <SDL2/SDL.h>
@@ -36,11 +37,77 @@ SDL_Surface *image_load_converted(const char *path, int alpha) {
     }
     SDL_Surface *converted;
     if (alpha) {
+        // convert to 32bit argb:
         converted = SDL_ConvertSurfaceFormat(
-            original, SDL_PIXELFORMAT_BGRA8888, 0);
+            original, SDL_PIXELFORMAT_ARGB8888, 0);
+        if (!converted) {
+            SDL_FreeSurface(original);
+            return NULL;
+        }
+        printf("%s WITH alpha\n", path);
+        assert(SDL_ISPIXELFORMAT_ALPHA(converted->format->format));
+        assert(converted->format->BitsPerPixel == 32);
     } else {
+        // convert to 24bit rgb:
         converted = SDL_ConvertSurfaceFormat(
-            original, SDL_PIXELFORMAT_BGR888, 0);
+            original, SDL_PIXELFORMAT_RGB888, 0);
+        if (!converted) {
+            SDL_FreeSurface(original);
+            return NULL;
+        }
+        printf("%s WITHOUT alpha\n", path);
+        assert(!SDL_ISPIXELFORMAT_ALPHA(converted->format->format));
+
+        // Sadly, SDL seems to fail this conversion in current versions.
+        // If SDL failed us, correct the epic failure >:-( and do it manually:
+        if (converted->format->BitsPerPixel == 32) {
+            SDL_FreeSurface(original);
+            char *fixed_pixels = malloc(3 * converted->w * converted->h);
+            if (!fixed_pixels) {
+                SDL_FreeSurface(converted);
+                return NULL;
+            }
+            if (SDL_LockSurface(converted)) {
+                free(fixed_pixels);
+                SDL_FreeSurface(converted);
+                return NULL;
+            }
+            char *p = (converted->pixels);
+            for (int i = 0; i < converted->w * converted->h; i++) {
+                int target_index = 3 * i;
+                int source_index = 4 * i;
+                fixed_pixels[target_index + 0] =
+                    p[source_index + 0];
+                fixed_pixels[target_index + 1] =
+                    p[source_index + 1];
+                fixed_pixels[target_index + 2] =
+                    p[source_index + 2];
+            }
+            SDL_UnlockSurface(converted);
+            SDL_Surface *converted2 = SDL_CreateRGBSurface(
+                0, converted->w, converted->h, 24,
+                0xff000000,
+                0x00ff0000,
+                0x0000ff00,
+                0x00000000
+            );
+            SDL_FreeSurface(converted);
+            if (!converted2) {
+                free(fixed_pixels);
+                return NULL;
+            }
+            if (SDL_LockSurface(converted2)) {
+                SDL_FreeSurface(converted2);
+                free(fixed_pixels);
+                return NULL;
+            }
+            memcpy(converted2->pixels, fixed_pixels, 3 * converted2->w *
+                converted2->h);
+            SDL_UnlockSurface(converted2);
+            printf("returning converted2\n");
+            return converted2;
+        }
+        printf("WAAAAT\n");
     }
     SDL_FreeSurface(original);
     return converted;
