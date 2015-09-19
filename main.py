@@ -26,9 +26,9 @@ while run is True:
             pixel=255-img[x,y]
             pixel=((pixel*offset)+height)%255
             cimg[x,y]=gradient[10,pixel]
-   cv2.imshow('Depth', cimg)
-   #cv.ShowImage('Depth', img)
-   run=True
-   if cv.WaitKey(10) == 27:
-       sys.exit(0)
+    cv2.imshow('Depth', cimg)
+    #cv.ShowImage('Depth', img)
+    run=True
+    if cv.WaitKey(10) == 27:
+        sys.exit(0)
 
