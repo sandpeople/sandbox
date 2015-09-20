@@ -174,8 +174,8 @@ void particle_update(struct particle_instance *inst) {
             inst->vy = -vmax;
         }
 
-        inst->x += drift_x * inst->vx * 0.1;
-        inst->y += drift_y * inst->vy * 0.1;
+        inst->x += inst->vx * 0.5;
+        inst->y += inst->vy * 0.5;
     }
 }
 
