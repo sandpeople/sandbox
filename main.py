@@ -55,6 +55,9 @@ while run is True:
     cv2.imshow('Depth', cimg)
    
     # quit if escape is pressed: 
+    if cv.WaitKey(10) == ord('1'):
+        print "lala 1"
+
     if cv.WaitKey(10) == 27:
         sys.exit(0)
 
