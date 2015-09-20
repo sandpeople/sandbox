@@ -30,7 +30,6 @@ void simulation_updateMovingObjects() {
     }
     int timestep = (1000.0 / 10.0);
     while (lastMovingObjectsUpdate + timestep < SDL_GetTicks()) {
-        printf("update.\n");
         particle_updateAll();
         lastMovingObjectsUpdate += timestep;
     }
