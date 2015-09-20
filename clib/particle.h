@@ -12,6 +12,7 @@ int particle_loadImage(int type, const char *path);
 void particle_wipeAll(int type);
 void particle_renderToSurface(int type, SDL_Surface *srf);
 void particle_renderAllToSurface(int from_type, int to_type, SDL_Surface *srf);
+void particle_updateAll(void);
 
 // managing particle instances:
 struct particle_instance;
@@ -23,3 +24,4 @@ void particle_move(struct particle_instance* inst, double x, double y);
 // convenience functions for particle spawning:
 struct particle_instance *particle_addRandom(int type);
 void particle_addRandomCrowd(int type, int amount);
+

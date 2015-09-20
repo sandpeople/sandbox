@@ -43,8 +43,11 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
         int depth_offset = (depth_source_y +
             depth_source_x * ysize);
 
-        // calculate gradient offset:
+        // set height:
         int height = 255 - depth_array[depth_offset];
+        height_map[x + y * xsize] = (double)height;
+
+        // calculate gradient offset:
         int height_color_range_min = 60;
         int height_color_range_max = 100;
         float height_color_value = ((float)(height - height_color_range_min))/
@@ -91,6 +94,8 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
             y++;
         }
     }
+
+    simulation_updateMovingObjects();
 
     // draw particles on top of water: 
     simulation_drawAfterWater();

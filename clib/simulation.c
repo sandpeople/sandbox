@@ -23,6 +23,19 @@ void initialize_simulation() {
     simulation_initialized = 1;
 }
 
+static int64_t lastMovingObjectsUpdate = -1;
+void simulation_updateMovingObjects() {
+    if (lastMovingObjectsUpdate < 0) {
+        lastMovingObjectsUpdate = SDL_GetTicks();
+    }
+    int timestep = (1000.0 / 10.0);
+    while (lastMovingObjectsUpdate + timestep < SDL_GetTicks()) {
+        printf("update.\n");
+        particle_updateAll();
+        lastMovingObjectsUpdate += timestep;
+    }
+}
+
 void simulation_drawBeforeWater() {
     simulation_unlockSurface();
 

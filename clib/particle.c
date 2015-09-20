@@ -22,6 +22,7 @@ struct particle_instance {
     int type;
     double x;
     double y;
+    double vx, vy;
     double angle;
     struct particle_instance *next, *prev;
 };
@@ -127,7 +128,7 @@ void particle_renderToSurface(int type, SDL_Surface *srf) {
         dest.x = abs_pos_x;
         dest.y = abs_pos_y;
         if (type == PARTICLE_GRASS) {
-            if (topology_scan_type(TOPOLOGY_GRASS, dest.x, dest.y, 5) < 0.5) {
+            if (topology_scan_type(TOPOLOGY_GRASS, dest.x, dest.y, 15) < 0.5) {
                 inst = inst->next;
                 continue;
             }
@@ -136,6 +137,40 @@ void particle_renderToSurface(int type, SDL_Surface *srf) {
         dest.y -= i_srf->h / 2;
         SDL_BlitSurface(i_srf, NULL, srf, &dest);
         inst = inst->next;
+    }
+}
+
+void particle_update(struct particle_instance *inst) {
+    if (inst->type == PARTICLE_CAR) {
+        double abs_pos_x = inst->x * ((double)topology_map_x);
+        double abs_pos_y = inst->y * ((double)topology_map_y);
+        int pixel_pos_x = abs_pos_x;
+        int pixel_pos_y = abs_pos_y;
+
+        double drift_x = 0;
+        double drift_y = 0;
+        topology_calculate_drift(pixel_pos_x, pixel_pos_y,
+            25, &drift_x, &drift_y);
+ 
+        double move_x = 1.0 / ((double)topology_map_x);
+        double move_y = 1.0 / ((double)topology_map_y);
+
+        inst->vx += drift_x * move_x * 0.005;
+        inst->vy += drift_y * move_y * 0.005;
+
+        inst->x += inst->vx;
+        inst->y += inst->vy;
+    }
+}
+
+void particle_updateAll(void) {
+    for (int i = 0; i < PARTICLE_TYPE_COUNT; i++) {
+        struct particle_instance *inst = plist[i];
+        while (inst) {
+            struct particle_instance *ninst = inst->next;
+            particle_update(inst);
+            inst = ninst;
+        }
     }
 }
 
