@@ -96,7 +96,7 @@ while True:
     if len(reference_points) >= 4:
         cv2.line(image,reference_points[2],reference_points[3],(255,0,0),5)
     cv2.circle(image,(offset,offset), 10, (230), -1)
-    cv2.putText(image, "1", textOrg, fontFace, fontScale,(offset,offset), thickness, 8);
+    cv2.putText(image, "1", (offset,offset), fontFace, fontScale,(offset,offset), thickness, 8);
     cv2.circle(image,(640-offset,480-offset), 10, (230), -1)
     cv2.circle(image,(640-offset,offset), 10, (230), -1)
     cv2.circle(image,(offset,480-offset), 10, (230), -1)
