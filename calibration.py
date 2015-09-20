@@ -19,14 +19,25 @@ textSize = cv2.getTextSize("1", fontFace,fontScale, thickness);
 baseline += thickness;
 
 offset=100
+offsets=((offset,offset), (640-offset,offset), (offset,480-offset), (640-offset,480-offset))
+
+def weirdyze_ratio(points):
+    for i in range(0,3):
+        point=[]
+        point.append(points[i][1])
+        point.append(points[i][0])
+        points[i]=point
+    return points
 
 def contractions(img, points):
     global done_image
-    rows,cols = img.shape
+    #img.shape = (480, 640)
+    x,y = img.shape
+
     pts1 = np.float32([points[0],points[1],points[2],points[3]])
-    pts2 = np.float32([[0,0],[rows,0],[0,cols],[rows, cols]])
+    pts2 = np.float32([[0,0],[0,y],[x,0],[x, y]])
     M = cv2.getPerspectiveTransform(pts1,pts2)
-    dst = cv2.warpPerspective(img,M,(cols,rows))
+    dst = cv2.warpPerspective(img,M,(y,x))
     done_image=dst
 
 def get_depth():
@@ -56,7 +67,7 @@ def click_and_crop(event, x, y, flags, param):
     # performed
     if event == cv2.EVENT_LBUTTONDOWN:
         if cropping == False:
-            reference_points = [(x+offset, y+offset)]
+            reference_points.append((x, y))
         else:
             reference_points.append((x, y))
             done=True
@@ -75,10 +86,9 @@ def click_and_crop(event, x, y, flags, param):
         if done == True:
             reference_points.append((x, y))
             points = reference_points
-            contractions(image, points)
+            contractions(image, weirdyze_ratio(points))
             done=False
             cropping=False
-            cv2.line(image,reference_points[2],reference_points[3],(255,0,0),5)
         cv2.imshow("image", get_image()) 
 
 image=get_image()
@@ -95,11 +105,14 @@ while True:
         cv2.line(image,reference_points[0],reference_points[1],(255,0,0),5)
     if len(reference_points) >= 4:
         cv2.line(image,reference_points[2],reference_points[3],(255,0,0),5)
-    cv2.circle(image,(offset,offset), 10, (230), -1)
-    cv2.putText(image, "1", (offset,offset), fontFace, fontScale,(offset,offset), thickness, 8);
-    cv2.circle(image,(640-offset,480-offset), 10, (230), -1)
-    cv2.circle(image,(640-offset,offset), 10, (230), -1)
-    cv2.circle(image,(offset,480-offset), 10, (230), -1)
+    cv2.circle(image,offsets[0], 10, (230), -1)
+    cv2.putText(image, "1", offsets[0], fontFace, fontScale,(offset,offset), thickness, 8);
+    cv2.circle(image,offsets[1], 10, (230), -1)
+    cv2.putText(image, "2", offsets[1], fontFace, fontScale,(offset,offset), thickness, 8);
+    cv2.circle(image,offsets[2], 10, (230), -1)
+    cv2.putText(image, "3", offsets[2], fontFace, fontScale,(offset,offset), thickness, 8);
+    cv2.circle(image,offsets[3], 10, (230), -1)
+    cv2.putText(image, "4", offsets[3], fontFace, fontScale,(offset,offset), thickness, 8);
     cv2.imshow("image", image)
     key = cv2.waitKey(1) & 0xFF   
  
@@ -107,14 +120,11 @@ while True:
     if key == ord("c"):
         break
 
-
-
-
-# if there are two reference points, then crop the region of interest
-# from teh image and display it
-if len(points) >= 4:
-    cv2.imshow("ROI", done_image)
-    cv2.waitKey(0)
+if len(points) == 4:
+    while 1:
+        cv2.imshow("image", done_image)
+        cv.WaitKey(10)
+        contractions(get_image(), points)
  
 # close all open windows
 cv2.destroyAllWindows()
