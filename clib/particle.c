@@ -150,16 +150,32 @@ void particle_update(struct particle_instance *inst) {
         double drift_x = 0;
         double drift_y = 0;
         topology_calculate_drift(pixel_pos_x, pixel_pos_y,
-            25, &drift_x, &drift_y);
+            15, &drift_x, &drift_y);
  
         double move_x = 1.0 / ((double)topology_map_x);
         double move_y = 1.0 / ((double)topology_map_y);
 
         inst->vx += drift_x * move_x * 0.005;
         inst->vy += drift_y * move_y * 0.005;
+        inst->vx *= 0.95;
+        inst->vy *= 0.95;
 
-        inst->x += inst->vx;
-        inst->y += inst->vy;
+        double vmax = 8.0;
+        if (inst->vx > vmax) {
+            inst->vx = vmax;
+        }
+        if (inst->vy > vmax) {
+            inst->vy = vmax;
+        }
+        if (inst->vx < -vmax) {
+            inst->vx = -vmax;
+        }
+        if (inst->vy < -vmax) {
+            inst->vy = -vmax;
+        }
+
+        inst->x += drift_x * inst->vx * 0.1;
+        inst->y += drift_y * inst->vy * 0.1;
     }
 }
 

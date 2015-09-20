@@ -50,11 +50,17 @@ void topology_calculate_drift(int x, int y, int radius,
             if (height_diff_fac < -1.0) {
                 height_diff_fac = -1.0;
             }
+            if (height_diff_fac > 0) {
+                height_diff_fac *= height_diff_fac;
+            } else {
+                height_diff_fac *= height_diff_fac;
+                height_diff_fac = -height_diff_fac;
+            }
             vec_x += (px - x) * height_diff_fac * 5;
             vec_y += (py - y) * height_diff_fac * 5;
         }
     }
-    double max = 15.0f;
+    double max = 25.0f;
     if (vec_x > max) {
         vec_x = max;
     }
