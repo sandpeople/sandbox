@@ -127,6 +127,10 @@ char *image_load_raw(const char *path, int alpha, int *width, int *height) {
     return raw_data;
 }
 
+SDL_Surface *images_duplicate(SDL_Surface *old) {
+    return SDL_ConvertSurface(old, old->format, 0);
+}
+
 SDL_Surface *grass;
 
 char *raw_gradient_data = NULL;
@@ -147,6 +151,9 @@ void images_init() {
 
     // load particle images:
     if (!particle_loadImage(PARTICLE_GRASS, "images/grass.png")) {
+        goto images_init_error;
+    }
+    if (!particle_loadImage(PARTICLE_CAR, "images/car.png")) {
         goto images_init_error;
     }
 

@@ -18,6 +18,7 @@ void initialize_simulation() {
     images_init();
 
     particle_addRandomCrowd(PARTICLE_GRASS, 5000);
+    particle_addRandomCrowd(PARTICLE_CAR, 50);
 
     simulation_initialized = 1;
 }
@@ -60,7 +61,7 @@ void simulation_finalRenderToArray(uint8_t *render_data,
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int i1 = 3 * (x + y * width);
-            int i2 = 4 * (x + y * width);
+            int i2 = 4 * x + y * pitch;
 
             uint8_t a = pix[i2 + 0];
             double alpha = ((double)a)/(255.0);

@@ -2,7 +2,8 @@
 #include <SDL2/SDL.h>
 
 #define PARTICLE_GRASS 0
-#define PARTICLE_TYPE_COUNT 1
+#define PARTICLE_CAR 1
+#define PARTICLE_TYPE_COUNT 2
 
 #define PARTICLE_BELOW_WATER 1
 
@@ -15,7 +16,8 @@ void particle_renderAllToSurface(int from_type, int to_type, SDL_Surface *srf);
 // managing particle instances:
 struct particle_instance;
 void particle_remove(struct particle_instance* inst);
-struct particle_instance* particle_add(int type, double x, double y);
+struct particle_instance* particle_add(int type, double x, double y,
+    double angle);
 void particle_move(struct particle_instance* inst, double x, double y);
 
 // convenience functions for particle spawning:
