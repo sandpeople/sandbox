@@ -150,7 +150,7 @@ void particle_update(struct particle_instance *inst) {
         double drift_x = 0;
         double drift_y = 0;
         topology_calculate_drift(pixel_pos_x, pixel_pos_y,
-            15, &drift_x, &drift_y);
+            &drift_x, &drift_y);
  
         double move_x = 1.0 / ((double)topology_map_x);
         double move_y = 1.0 / ((double)topology_map_y);

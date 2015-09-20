@@ -5,6 +5,11 @@
 #include "particle.h"
 #include "topology.h"
 
+
+double *topology_drift_cache_height = NULL;
+double *topology_drift_cache_value_x = NULL;
+double *topology_drift_cache_value_y = NULL;
+
 char *topology_map = NULL;
 double *height_map = NULL;
 int topology_map_x = 0;
@@ -25,17 +30,54 @@ void topology_init(int size_x, int size_y) {
     topology_map_y = size_y;
     topology_map = malloc(size_x * size_y);
     height_map = (double*)malloc(size_x * size_y * sizeof(double));
+    free(topology_drift_cache_height);
+    topology_drift_cache_height = NULL;
+    free(topology_drift_cache_value_x);
+    topology_drift_cache_value_x = NULL;
+    free(topology_drift_cache_value_y);
+    topology_drift_cache_value_y = NULL;
 }
 
-void topology_calculate_drift(int x, int y, int radius,
-        double *vx, double *vy) {
+void topology_calculate_drift(int x, int y, double *vx, double *vy) {
+    // don't allow invalid values:
+    if (x < 0 || x >= topology_map_x || y < 0 || y >= topology_map_y) {
+        *vx = 0; *vy = 0;
+        return;
+    }
+
+    // ensure cache:
+    if (topology_drift_cache_height == NULL) {
+        topology_drift_cache_height = (double*)malloc(topology_map_x *
+            topology_map_y * sizeof(double));
+        memset(topology_drift_cache_height, 0,
+            topology_map_x *
+            topology_map_y * sizeof(double));
+        topology_drift_cache_value_x = (double*)malloc(topology_map_x *
+            topology_map_y * sizeof(double));
+        topology_drift_cache_value_y = (double*)malloc(topology_map_x *
+            topology_map_y * sizeof(double));   
+    }
+
+    // prepare stuff for cache access:
+    int currentindex = x + y * topology_map_x;
+    double cache_match_height = 1000.0f + height_map[currentindex];
+
+    // see if we have a cached value:
+    if (fabs(topology_drift_cache_height[currentindex] - cache_match_height) <
+            1.0f) {
+        // we do!
+        *vx = topology_drift_cache_value_x[currentindex];
+        *vy = topology_drift_cache_value_y[currentindex];
+        return;
+    }
+    topology_drift_cache_height[currentindex] = cache_match_height;
+
+    // nope. calculate one:
+    int radius = 20;
     int scan_start_x = x - (radius / 2.0);
     int scan_start_y = y - (radius / 2.0);
     double vec_x = 0;
     double vec_y = 0;
-    if (x < 0 || x >= topology_map_x || y < 0 || y >= topology_map_y) {
-        return;
-    }
     double center_height = height_map[x + y * topology_map_x]; 
     for (int px = scan_start_x; px < scan_start_x + radius; px++) {
         if (px < 0 || px >= topology_map_x) continue;
@@ -75,6 +117,8 @@ void topology_calculate_drift(int x, int y, int radius,
     }
     *vx = vec_x;
     *vy = vec_y;
+    topology_drift_cache_value_x[currentindex] = vec_x;
+    topology_drift_cache_value_y[currentindex] = vec_y;
 }
 
 double topology_scan_type(int type, int x, int y, int size) {

@@ -85,7 +85,7 @@ void fluid_update(int type, int x, int y) {
     double velocity_x = 0;
     double velocity_y = 0;
 
-    topology_calculate_drift(x, y, 15,
+    topology_calculate_drift(x, y,
         &velocity_x, &velocity_y);
 
     velocity_x /= 10.0;
@@ -123,24 +123,26 @@ void fluid_update(int type, int x, int y) {
         target_y = y - 2;
     }
 
+    double ownAmount = fluid_map[type][x + y * fluid_map_x];
     if (target_x != x || target_y != y) {
-        double transfer = 2.0;
+        double transfer = 0.2 * ownAmount;
         if (transfer > fluid_map[type][x + y * fluid_map_x] * 0.5) {
             transfer = fluid_map[type][x + y * fluid_map_x] * 0.5;
         }
         fluid_map[type][target_x + target_y * fluid_map_x] += transfer;
         fluid_map[type][x + y * fluid_map_x] -= transfer;
+        ownAmount = fluid_map[type][x + y * fluid_map_x];
     }
     for (int neighbor_x = -1; neighbor_x <= 1; neighbor_x += 2) {
         for (int neighbor_y = -1; neighbor_y <= 1; neighbor_y += 2) {
-            double transfer = 0.5;
-            double ownAmount = fluid_map[type][x + y * fluid_map_x];
+            double transfer = 0.1 * ownAmount;
             if (transfer > ownAmount) {
                 transfer = ownAmount;
             }
             double gone = fluid_tryTransfer(type, x + neighbor_x,
                 y + neighbor_y, transfer, ownAmount);
             fluid_map[type][x + y * fluid_map_x] -= gone;
+            ownAmount = fluid_map[type][x + y * fluid_map_x];
         }
     } 
 }
