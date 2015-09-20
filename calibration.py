@@ -4,6 +4,7 @@ from freenect import sync_get_depth
 import frame_convert
 import numpy as np
 from skimage import exposure
+import pickle
  
 
 # initialize the list of reference points and boolean indicating
@@ -20,6 +21,7 @@ baseline += thickness;
 
 offset=100
 offsets=((offset,offset), (640-offset,offset), (offset,480-offset), (640-offset,480-offset))
+savefile='cal.p'
 
 def weirdyze_ratio(points):
     for i in range(0,3):
@@ -121,6 +123,7 @@ while True:
         break
 
 if len(points) == 4:
+    pickle.dump(points, open( "save.p", "wb" ))
     while 1:
         cv2.imshow("image", done_image)
         cv.WaitKey(10)
