@@ -4,24 +4,40 @@
 #include <stdint.h>
 #include <SDL2/SDL_image.h>
 
+#include "fluid.h"
 #include "images.h"
 #include "particle.h"
 #include "simulation.h"
+#include "topology.h"
 
 static int simulation_surface_locked = 0;
 static int simulation_initialized = 0;
-void initialize_simulation() {
+void initialize_simulation(int width, int height) {
     if (simulation_initialized) {
         return;
     }
 
     images_init();
 
+    fluid_init(width, height);
+    fluid_randomSpawns();
+
     particle_addRandomCrowd(PARTICLE_GRASS, 5000);
     particle_addRandomCrowd(PARTICLE_CAR, 50);
 
     simulation_initialized = 1;
 }
+
+void simulation_lockSurface() {
+    if (!simulation_surface_locked) {
+        if (SDL_LockSurface(images_simulation_image) != 0) {
+            printf("ERROR FAILED TO LOCK SIMULATION IMAGE\n");
+            exit(1);
+        }
+        simulation_surface_locked = 1;
+    }
+}
+
 
 static int64_t lastMovingObjectsUpdate = -1;
 void simulation_updateMovingObjects() {
@@ -33,6 +49,20 @@ void simulation_updateMovingObjects() {
         particle_updateAll();
         lastMovingObjectsUpdate += timestep;
     }
+}
+
+static int64_t lastFluidUpdate = -1;
+int simulation_getFluidUpdateCount() {
+    if (lastFluidUpdate < 0) {
+        lastFluidUpdate = SDL_GetTicks();
+    }
+    int timestep = (1000.0 / 15.0);
+    int count = 0;
+    while (lastFluidUpdate + timestep < SDL_GetTicks()) {
+        count += 1;
+        lastFluidUpdate += timestep;
+    }
+    return count;
 }
 
 void simulation_drawBeforeWater() {
@@ -56,12 +86,7 @@ void simulation_drawAfterWater() {
 
 void simulation_finalRenderToArray(uint8_t *render_data,
         int width, int height) {
-    if (!simulation_surface_locked) {
-        if (SDL_LockSurface(images_simulation_image)) {
-            printf("ERROR: locking simulation surface failed\n");
-            return;
-        }
-    }
+    simulation_lockSurface();
     assert(width == images_simulation_image->w);
     assert(height == images_simulation_image->h);
     assert(images_simulation_image->format->BitsPerPixel == 32);
@@ -102,26 +127,27 @@ void simulation_finalRenderToArray(uint8_t *render_data,
 }
 
 void simulation_addPixel(int i, int r, int g, int b, int a) {
-    if (!simulation_surface_locked) {
-        SDL_LockSurface(images_simulation_image);
-        simulation_surface_locked = 1;
-    }
+    simulation_lockSurface();
     char *pix = (char*)images_simulation_image->pixels;
     r = (int)(((float)r) * ((float)a / 255.0));
     g = (int)(((float)g) * ((float)a / 255.0));
     b = (int)(((float)b) * ((float)a / 255.0));
 
-    int new_r = pix[3*i + 0] + r;
+    int new_a = pix[4*i + 0] + a;
+    if (new_a > 255) {new_a = 255;}
+    pix[4*i + 0] = new_a;
+
+    int new_r = pix[4*i + 1] + r;
     if (new_r > 255) {new_r = 255;}
-    pix[3*i + 0] = new_r;
+    pix[4*i + 1] = new_r;
 
-    int new_g = pix[3*i + 1] + g;
+    int new_g = pix[4*i + 2] + g;
     if (new_g > 255) {new_g = 255;}
-    pix[3*i + 1] = new_g; 
+    pix[4*i + 2] = new_g; 
 
-    int new_b = pix[3*i + 2] + b;
+    int new_b = pix[4*i + 3] + b;
     if (new_b > 255) {new_b = 255;}
-    pix[3*i + 2] = new_b;
+    pix[4*i + 3] = new_b;
 }
 
 void simulation_unlockSurface() {

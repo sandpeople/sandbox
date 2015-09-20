@@ -5,6 +5,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
+#include "fluid.h"
 #include "images.h"
 #include "simulation.h"
 #include "topology.h"
@@ -16,9 +17,10 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
         intermediate_colors_buf = malloc(xsize * ysize * 3);
     }
 
-    initialize_simulation();
+    initialize_simulation(xsize, ysize);
     assert(gradient_x > 0);
     images_init_simulation_image(xsize, ysize);
+    fluid_init(xsize, ysize);
 
     simulation_drawBeforeWater();
 
@@ -27,6 +29,8 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
     uint8_t *output_colors_final = (uint8_t*)output_colors_v;
 
     topology_init(xsize, ysize);
+
+    int fluidUpdates = simulation_getFluidUpdateCount();
 
     int x = 0;
     int y = 0;
@@ -78,7 +82,7 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
         output_colors[offset+1] = gradient_c1;
         output_colors[offset+2] = gradient_c2;
 
-        // topology map:
+        // update topology map:
         topology_map[i] = TOPOLOGY_NONE;
         if (gradient_abs_x_pos < 110 && gradient_abs_x_pos > 65) {
             topology_map[i] = TOPOLOGY_GRASS;
@@ -86,6 +90,12 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
             //output_colors[offset+1] = 0;
             //output_colors[offset+2] = 255;
         }
+
+        // update fluid simulation in this spot:
+        for (int k = 0; k < fluidUpdates; k++) {
+            fluid_updateAll(x, y);
+        }
+        fluid_drawAllIfThere(x, y);
  
         // advance coordinates:
         x++;
