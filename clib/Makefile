@@ -1,2 +1,2 @@
 all:
-	gcc -O3 -fPIC -std=c99 -Wall -Wextra -shared -o ../clib.so images.c interface.c simulation.c -lSDL2 -lSDL2_image
+	gcc -O2 -g -fPIC -std=c99 -Wall -Wextra -shared -o ../libclib.so images.c interface.c particle.c random.c simulation.c topology.c -lSDL2 -lSDL2_image

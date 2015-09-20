@@ -2,9 +2,7 @@
 import ctypes
 
 def call_clib_sim(input_depth_image, output_color_image):
-    #indata = numpy.ones((5,6), dtype=numpy.double)
-    #outdata = numpy.zeros((5,6), dtype=numpy.double)
-    lib = ctypes.cdll.LoadLibrary('./clib.so')
+    lib = ctypes.cdll.LoadLibrary('./libclib.so')
     run_simulation = lib.run_simulation
     
     # call simulation:
@@ -12,7 +10,4 @@ def call_clib_sim(input_depth_image, output_color_image):
         ctypes.c_int(input_depth_image.shape[0]),
         ctypes.c_int(input_depth_image.shape[1]),
         ctypes.c_void_p(output_color_image.ctypes.data))
-
-    #print 'indata: %s' % indata
-    #print 'outdata: %s' % outdata
 

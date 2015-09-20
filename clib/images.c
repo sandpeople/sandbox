@@ -6,11 +6,13 @@
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_image.h>
 
+#include "particle.h"
+
 SDL_Surface *images_simulation_image = NULL;
 static int simulation_screen_width = 0;
 static int simulation_screen_height = 0;
 
-void image_init_simulation_image(int screen_width, int screen_height) {
+void images_init_simulation_image(int screen_width, int screen_height) {
     if (images_simulation_image) {
         if (screen_width == simulation_screen_width &&
                 screen_height == simulation_screen_height) {
@@ -19,15 +21,17 @@ void image_init_simulation_image(int screen_width, int screen_height) {
         SDL_FreeSurface(images_simulation_image);
         images_simulation_image = NULL;
     }
+    printf("CREATING IMAGE\n");
     simulation_screen_width = screen_width;
     simulation_screen_height = screen_height;
     images_simulation_image = SDL_CreateRGBSurface(
-        0, screen_width, screen_height, 24,
+        0, screen_width, screen_height, 32,
         0xff000000,
         0x00ff0000,
         0x0000ff00,
         0x000000ff
     );
+    assert(images_simulation_image->format->BitsPerPixel == 32);
 }
 
 SDL_Surface *image_load_converted(const char *path, int alpha) {
@@ -39,12 +43,11 @@ SDL_Surface *image_load_converted(const char *path, int alpha) {
     if (alpha) {
         // convert to 32bit argb:
         converted = SDL_ConvertSurfaceFormat(
-            original, SDL_PIXELFORMAT_ARGB8888, 0);
+            original, SDL_PIXELFORMAT_RGBA8888, 0);
         if (!converted) {
             SDL_FreeSurface(original);
             return NULL;
         }
-        printf("%s WITH alpha\n", path);
         assert(SDL_ISPIXELFORMAT_ALPHA(converted->format->format));
         assert(converted->format->BitsPerPixel == 32);
     } else {
@@ -55,7 +58,6 @@ SDL_Surface *image_load_converted(const char *path, int alpha) {
             SDL_FreeSurface(original);
             return NULL;
         }
-        printf("%s WITHOUT alpha\n", path);
         assert(!SDL_ISPIXELFORMAT_ALPHA(converted->format->format));
 
         // Sadly, SDL seems to fail this conversion in current versions.
@@ -104,16 +106,17 @@ SDL_Surface *image_load_converted(const char *path, int alpha) {
             memcpy(converted2->pixels, fixed_pixels, 3 * converted2->w *
                 converted2->h);
             SDL_UnlockSurface(converted2);
-            printf("returning converted2\n");
             return converted2;
         }
-        printf("WAAAAT\n");
     }
     SDL_FreeSurface(original);
     return converted;
 }
 char *image_load_raw(const char *path, int alpha, int *width, int *height) {
     SDL_Surface *srf = image_load_converted(path, alpha);
+    if (!srf) {
+        return NULL;
+    }
     SDL_UnlockSurface(srf);
     char *raw_data = malloc((3 + alpha) * srf->w * srf->h);
     memcpy(raw_data, srf->pixels, (3 + alpha) * srf->w * srf->h);
@@ -124,8 +127,11 @@ char *image_load_raw(const char *path, int alpha, int *width, int *height) {
     return raw_data;
 }
 
+SDL_Surface *grass;
+
 char *raw_gradient_data = NULL;
-int gradient_x, gradient_y;
+int gradient_x = 0;
+int gradient_y = 0;
 static int images_initialized = 0;
 void images_init() {
     if (images_initialized) return;
@@ -136,6 +142,13 @@ void images_init() {
     raw_gradient_data = image_load_raw("images/gradient.png", 0, &gradient_x,
         &gradient_y);
     if (!raw_gradient_data) goto images_init_error;
+
+    grass = image_load_converted("images/grass.png", 1);
+
+    // load particle images:
+    if (!particle_loadImage(PARTICLE_GRASS, "images/grass.png")) {
+        goto images_init_error;
+    }
 
     images_initialized = 1;
     return;

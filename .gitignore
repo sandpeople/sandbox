@@ -1,2 +1,8 @@
 *.pyc
 clib.so
+*.o
+libclib.so
+clib_test/test
+*.swp
+*.swo
+*~
