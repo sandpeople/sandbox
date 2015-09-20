@@ -126,9 +126,11 @@ void particle_renderToSurface(int type, SDL_Surface *srf) {
        
         dest.x = abs_pos_x;
         dest.y = abs_pos_y;
-        if (topology_scan_type(TOPOLOGY_GRASS, dest.x, dest.y, 5) < 0.5) {
-            inst = inst->next;
-            continue;
+        if (type == PARTICLE_GRASS) {
+            if (topology_scan_type(TOPOLOGY_GRASS, dest.x, dest.y, 5) < 0.5) {
+                inst = inst->next;
+                continue;
+            }
         }
         dest.x -= i_srf->w / 2;
         dest.y -= i_srf->h / 2;
