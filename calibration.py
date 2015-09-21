@@ -19,9 +19,9 @@ baseline=0;
 textSize = cv2.getTextSize("1", fontFace,fontScale, thickness);
 baseline += thickness;
 
-offset=100
-#  er y dann x
-#     480    640
+offset=50
+#  er x dann y
+#     640    480
 offsetstrup=[(offset,offset), (640-offset,offset), (offset,480-offset), (640-offset,480-offset)]
 offsetsarr=[[offset,offset], [640-offset,offset], [offset,480-offset], [640-offset,480-offset]]
 savefile='cal.p'
@@ -57,14 +57,16 @@ def contractions(img, points):
     global done_image
     #img.shape = (480, 640)
     #img = offset_points(points)
-    #print "\nimg.shape:%s\npoints:%s\noffsetsarr:%s\ninvert_offsetsarr(offsets):%s\n" %(img.shape,points,offsetsarr,invert_offsets(offsetsarr))
+    print "\nimg.shape:%s\npoints:%s\noffsetsarr:%s\n" %(img.shape,points,offsetsarr)
     y,x = img.shape
+    #y -= offset
+    #x -= offset
     pts1 = np.float32(points)
     pts2 = np.float32(offsetsarr)
     M = cv2.getPerspectiveTransform(pts1,pts2)
-    print "pts1 %s , pts2 %s , x %s , y %s" %(pts1,pts2,x,y)
+    #print "off %s , point %s" %()
     dst = cv2.warpPerspective(img,M,(x,y))
-    #print dst
+    print dst
     done_image=dst
 
 def get_depth():
@@ -132,13 +134,13 @@ while True:
     #    cv2.line(image,reference_points[0],reference_points[1],(255,0,0),5)
     #if len(reference_points) >= 4:
     #    cv2.line(image,reference_points[2],reference_points[3],(255,0,0),5)
-    cv2.circle(image,offsetstrup[0], 10, (230), -1)
+    cv2.circle(image,offsetstrup[0], 5, (230), -1)
     cv2.putText(image, "1", offsetstrup[0], fontFace, fontScale,(offset,offset), thickness, 8);
-    cv2.circle(image,offsetstrup[1], 10, (230), -1)
+    cv2.circle(image,offsetstrup[1], 5, (230), -1)
     cv2.putText(image, "2", offsetstrup[1], fontFace, fontScale,(offset,offset), thickness, 8);
-    cv2.circle(image,offsetstrup[2], 10, (230), -1)
+    cv2.circle(image,offsetstrup[2], 5, (230), -1)
     cv2.putText(image, "3", offsetstrup[2], fontFace, fontScale,(offset,offset), thickness, 8);
-    cv2.circle(image,offsetstrup[3], 10, (230), -1)
+    cv2.circle(image,offsetstrup[3], 5, (230), -1)
     cv2.putText(image, "4", offsetstrup[3], fontFace, fontScale,(offset,offset), thickness, 8);
     cv2.imshow("image", image)
     key = cv2.waitKey(1) & 0xFF   
@@ -149,6 +151,7 @@ while True:
 
 if len(points) == 4:
     pickle.dump(points, open( savefile, "wb" ))
+    print "write!!"
     while 1:
         cv2.imshow("image", done_image)
         cv.WaitKey(10)
