@@ -6,9 +6,12 @@ import numpy as np
 import frame_convert
 import sys
 from clib_interface import call_clib_sim
+import server
 import pickle
 points=pickle.load(open( "cal.p", "rb" ))
 print points
+
+# thread: server.launch_control.start()
 
 height=80
 offset=3.5
