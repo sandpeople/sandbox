@@ -2,40 +2,16 @@
 import cherrypy
 import os
 import json
+from jinja2 import Environment, FileSystemLoader
 
 class sandcontrol(object):
+    def __init__(self, **task_settings):
+        self.queue = task_settings.get('queue', None)
+
     @cherrypy.expose
     def index(self):
-        return """<html>
-<head>
-<script src="http://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
-<script type="text/javascript">
-$(document).ready(function() {
-    $("button").click(function() {
-        $.ajax({
-            url: "switch",
-            type: "POST",
-            data: {id: $(this).attr('id')},
-            success: function(response) {
-                alert(response);
-                $("#test").html(response);
-            } 
-        });
-    });
-});
-</script>
-</head>
-<body>
-    <h1>Sand Control</h1>
-    <button id=1>Button 1</button> </br>
-    <button id=2>Button 2</button> </br>
-    <button id=3>Button 3</button> </br>
-    <button id=4>Button 4</button>
-
-    <div id=test></div>
-
-</body>
-</html>"""
+        global tmpl
+        return tmpl.render()
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -43,11 +19,17 @@ $(document).ready(function() {
         print("button nr {} pressed".format(id))
         return json.dumps({"text" : "button {} ".format(id)})
 
-class launch_control():
-    def start():
-        CURDIR = os.getcwd()
-        cherrypy.config.update({
-            "tools.staticdir.dir" : CURDIR,
-            "tools.staticdir.on" : True
-            })
-        cherrypy.quickstart(sandcontrol())
+    def launch_control(self):
+        start()
+
+def start():
+    global tmpl
+    CURDIR = os.getcwd()
+    staticdir = CURDIR+"/webroot"
+    env = Environment(loader=FileSystemLoader(staticdir))
+    tmpl = env.get_template('index.html')
+    cherrypy.config.update({
+        "tools.staticdir.dir" : staticdir,
+        "tools.staticdir.on" : True
+        })
+    cherrypy.quickstart(sandcontrol())

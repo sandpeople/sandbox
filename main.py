@@ -8,10 +8,16 @@ import sys
 from clib_interface import call_clib_sim
 import server
 import pickle
+import threading
+from Queue import Queue
 points=pickle.load(open( "cal.p", "rb" ))
 print points
 
-# thread: server.launch_control.start()
+webapi_queue=Queue()
+server=server.sandcontrol()
+serverd=threading.Thread(target = server.launch_control)
+serverd.daemon = True
+serverd.start()
 
 height=80
 offset=3.5
