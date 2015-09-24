@@ -35,7 +35,7 @@ void fluid_spawn(int type, int x, int y, double amount) {
 }
 
 double fluid_check(int type, int x, int y) {
-    if (x < 0 || x > fluid_map_x || y < 0 || y > fluid_map_y) {
+    if (x < 0 || x >= fluid_map_x || y < 0 || y >= fluid_map_y) {
         return 0.0;
     }
     if (fluid_map[type][x + y * fluid_map_x] < 5.0) {
@@ -75,6 +75,10 @@ double fluid_tryTransfer(int type, int target_x, int target_y, double amount, do
 }
 
 void fluid_update(int type, int x, int y) {
+    /* Do one update step of the physics simulation of the fluid located in
+       this spot, possibly making it spread to neighboring points.
+       Make sure to call this in a fixed time step for consistent physics.
+    */
     if (x < 0 || x >= fluid_map_x || y < 0 || y >= fluid_map_y) return;
 
     if (fluid_map[type][x + y * fluid_map_x] <= 0.01) {
@@ -123,6 +127,7 @@ void fluid_update(int type, int x, int y) {
         target_y = y - 2;
     }
 
+    // transfer along the slope of the ground:
     double ownAmount = fluid_map[type][x + y * fluid_map_x];
     if (target_x != x || target_y != y) {
         double transfer = 0.2 * ownAmount;
@@ -133,14 +138,24 @@ void fluid_update(int type, int x, int y) {
         fluid_map[type][x + y * fluid_map_x] -= transfer;
         ownAmount = fluid_map[type][x + y * fluid_map_x];
     }
+
+    // transfer evenly to all neighboring pixels:
     for (int neighbor_x = -1; neighbor_x <= 1; neighbor_x += 2) {
         for (int neighbor_y = -1; neighbor_y <= 1; neighbor_y += 2) {
+            // transfer to around 10% of own amount:
             double transfer = 0.1 * ownAmount;
             if (transfer > ownAmount) {
                 transfer = ownAmount;
             }
+
+            // transfer target limit should be fmax(ownAmount, 10.0):
+            double limit = fmax(ownAmount, 10.0); 
+
+            // do transfer and see how much we managed to transfer:
             double gone = fluid_tryTransfer(type, x + neighbor_x,
-                y + neighbor_y, transfer, ownAmount);
+                y + neighbor_y, transfer, limit);
+
+            // reduce transferred fluid from ourselves:
             fluid_map[type][x + y * fluid_map_x] -= gone;
             ownAmount = fluid_map[type][x + y * fluid_map_x];
         }
