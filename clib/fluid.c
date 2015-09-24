@@ -130,13 +130,16 @@ void fluid_update(int type, int x, int y) {
     // transfer along the slope of the ground:
     double ownAmount = fluid_map[type][x + y * fluid_map_x];
     if (target_x != x || target_y != y) {
-        double transfer = 0.2 * ownAmount;
-        if (transfer > fluid_map[type][x + y * fluid_map_x] * 0.5) {
-            transfer = fluid_map[type][x + y * fluid_map_x] * 0.5;
+        if (target_x >= 0 && x < fluid_map_x && y >= 0 &&
+                y < fluid_map_y) {
+            double transfer = 0.2 * ownAmount;
+            if (transfer > fluid_map[type][x + y * fluid_map_x] * 0.5) {
+                transfer = fluid_map[type][x + y * fluid_map_x] * 0.5;
+            }
+            fluid_map[type][target_x + target_y * fluid_map_x] += transfer;
+            fluid_map[type][x + y * fluid_map_x] -= transfer;
+            ownAmount = fluid_map[type][x + y * fluid_map_x];
         }
-        fluid_map[type][target_x + target_y * fluid_map_x] += transfer;
-        fluid_map[type][x + y * fluid_map_x] -= transfer;
-        ownAmount = fluid_map[type][x + y * fluid_map_x];
     }
 
     // transfer evenly to all neighboring pixels:
