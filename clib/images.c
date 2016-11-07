@@ -9,6 +9,7 @@
 #include "particle.h"
 
 SDL_Surface *images_simulation_image = NULL;
+SDL_Texture *images_simulation_3d_image = NULL;
 static int simulation_screen_width = 0;
 static int simulation_screen_height = 0;
 
@@ -32,6 +33,62 @@ void images_init_simulation_image(int screen_width, int screen_height) {
         0x000000ff
     );
     assert(images_simulation_image->format->BitsPerPixel == 32);
+}
+
+void images_simulation_3d_clear() {
+    // FIXME
+    assert(0);  // FIXME implement this
+}
+
+void images_simulation_2d_to_3d_upload() {
+    int texture_pitch = 0;
+    void **texptr;
+    SDL_LockTexture(
+        images_simulation_3d_image,
+        0, (void**)&texptr,
+        &texture_pitch);
+    assert(texture_pitch == 0);
+    memcpy(texptr, images_simulation_image->pixels,
+        images_simulation_image->w *
+        images_simulation_image->h *
+        4);
+    SDL_UnlockTexture(images_simulation_3d_image);
+
+    // FIXME !!!!
+    assert(0);   // FIXME: set render to texture target
+}
+
+void images_simulation_3d_to_2d_download() {
+    int texture_pitch = 0;
+    void **texptr;
+    SDL_LockTexture(
+        images_simulation_3d_image,
+        0, (void**)&texptr,
+        &texture_pitch);
+    assert(texture_pitch == 0);
+    memcpy(images_simulation_image->pixels, texptr,
+        images_simulation_image->w *
+        images_simulation_image->h *
+        4);
+    SDL_UnlockTexture(images_simulation_3d_image); 
+}
+
+void images_simulation_3d_to_2d_blit_ontop() {
+    int texture_pitch = 0;
+    void **texptr;
+    SDL_LockTexture(
+        images_simulation_3d_image,
+        0, (void**)&texptr,
+        &texture_pitch);
+    assert(texture_pitch == 0);
+    memcpy(images_simulation_image->pixels, texptr,
+        images_simulation_image->w *
+        images_simulation_image->h *
+        4);
+    SDL_UnlockTexture(images_simulation_3d_image);
+
+    // FIXME !!!!
+    assert(0); /// FIXME implement blit on top process !!!
 }
 
 SDL_Surface *image_load_converted(const char *path, int alpha) {

@@ -1,7 +1,11 @@
 
+#ifndef _SANDBOX_SIMULATION_H_
+#define _SANDBOX_SIMULATION_H_
+
 #include <stdint.h>
 
-void initialize_simulation(int width, int height);
+SDL_Renderer *simulation_getRenderer();
+void simulation_initialize(int width, int height);
 void simulation_drawBeforeWater();
 void simulation_drawAfterWater();
 void simulation_finalRenderToArray(uint8_t *render_data,
@@ -11,5 +15,6 @@ void simulation_unlockSurface();
 void simulation_updateMovingObjects();
 int simulation_getFluidUpdateCount();
 
+#endif  // _SANDBOX_SIMULATION_H_
 
 

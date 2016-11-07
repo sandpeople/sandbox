@@ -11,13 +11,15 @@
 #include "topology.h"
 
 uint8_t *intermediate_colors_buf = NULL;
-void run_simulation(const void *depth_array_v, int xsize, int ysize,
+void interface_run(
+        const void *depth_array_v,
+        int xsize, int ysize,
         void *output_colors_v) {
     if (!intermediate_colors_buf) {
         intermediate_colors_buf = malloc(xsize * ysize * 3);
     }
 
-    initialize_simulation(xsize, ysize);
+    simulation_initialize(xsize, ysize);
     assert(gradient_x > 0);
     images_init_simulation_image(xsize, ysize);
     fluid_init(xsize, ysize);
@@ -47,11 +49,11 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
         int depth_offset = (depth_source_y +
             depth_source_x * ysize);
 
-        // set height:
+        // Set height:
         int height = 255 - depth_array[depth_offset];
         height_map[x + y * xsize] = (double)height;
 
-        // calculate gradient offset:
+        // Calculate gradient offset:
         int height_color_range_min = 60;
         int height_color_range_max = 100;
         float height_color_value = ((float)(height - height_color_range_min))/
@@ -61,7 +63,7 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
         int gradient_abs_x_pos = ((float)(gradient_relative_x_pos *
             ((float)gradient_x)));
         
-        // truncate position:
+        // Truncate position:
         if (gradient_abs_x_pos < 0) gradient_abs_x_pos = 0;
         if (gradient_abs_x_pos >= gradient_x) {
             gradient_abs_x_pos = gradient_x - 1;
@@ -70,19 +72,19 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
         assert(gradient_abs_x_pos < gradient_x && gradient_abs_x_pos >= 0);
         assert(gradient_abs_x_pos < 256); 
 
-        // get gradient color:
+        // Get gradient color:
         int baseindex = 3 * (gradient_abs_x_pos +
             gradient_abs_y_pos * gradient_x);
         int gradient_c0 = raw_gradient_data[baseindex];
         int gradient_c1 = raw_gradient_data[baseindex + 1];
         int gradient_c2 = raw_gradient_data[baseindex + 2];
 
-        // offset+0: blue, offset+1: green, offset+2: red
+        // Offset+0: blue, offset+1: green, offset+2: red
         output_colors[offset+0] = gradient_c0;
         output_colors[offset+1] = gradient_c1;
         output_colors[offset+2] = gradient_c2;
 
-        // update topology map:
+        // Update topology map:
         topology_map[i] = TOPOLOGY_NONE;
         if (gradient_abs_x_pos < 110 && gradient_abs_x_pos > 65) {
             topology_map[i] = TOPOLOGY_GRASS;
@@ -91,13 +93,13 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
             //output_colors[offset+2] = 255;
         }
 
-        // update fluid simulation in this spot:
+        // Update fluid simulation in this spot:
         for (int k = 0; k < fluidUpdates; k++) {
             fluid_updateAll(x, y);
         }
         fluid_drawAllIfThere(x, y);
  
-        // advance coordinates:
+        // Advance coordinates:
         x++;
         if (x >= xsize) {
             x -= xsize;
@@ -107,13 +109,13 @@ void run_simulation(const void *depth_array_v, int xsize, int ysize,
 
     simulation_updateMovingObjects();
 
-    // draw particles on top of water: 
+    // Draw particles on top of water: 
     simulation_drawAfterWater();
 
-    // draw entire particle/fluid layer onto ground and fix orientation:
+    // Draw entire particle/fluid layer onto ground and fix orientation:
     simulation_finalRenderToArray(output_colors, xsize, ysize); 
 
-    // rotate image again since OpenCV uses a stupid format:
+    // Rotate image again since OpenCV uses a stupid format:
     for (int x = 0; x < xsize; x++) {
         for (int y = 0; y < ysize; y++) {
             int offset = 3 * (x + y * xsize);

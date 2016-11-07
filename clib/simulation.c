@@ -2,6 +2,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
+
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
 #include "fluid.h"
@@ -10,10 +13,38 @@
 #include "simulation.h"
 #include "topology.h"
 
+SDL_Window *hiddenWindow = NULL;
+SDL_Renderer *acceleratedRenderer = NULL;
+
+SDL_Renderer *simulation_getRenderer() {
+    return acceleratedRenderer;
+}
+
 static int simulation_surface_locked = 0;
 static int simulation_initialized = 0;
-void initialize_simulation(int width, int height) {
+void simulation_initialize(int width, int height) {
     if (simulation_initialized) {
+        return;
+    }
+
+    SDL_Init(SDL_INIT_VIDEO);
+
+    hiddenWindow = SDL_CreateWindow("A SDL2 window",
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
+        width, height,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+    if (!hiddenWindow) {
+        fprintf(stderr, "[simulation.c] FAILED TO INITIALIZE WINDOW");
+        exit(1);
+        return;
+    }
+    acceleratedRenderer = SDL_CreateRenderer(hiddenWindow, -1,
+        SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
+    if (!acceleratedRenderer) {
+        fprintf(stderr, "[simulation.c] FAILED TO INITIALIZE "
+            "ACCELERATED RENDERER");
+        exit(1);
         return;
     }
 
@@ -66,22 +97,26 @@ int simulation_getFluidUpdateCount() {
 }
 
 void simulation_drawBeforeWater() {
-    simulation_unlockSurface();
+    //simulation_unlockSurface();
 
     // clear simulation image:
     SDL_FillRect(images_simulation_image, NULL, 0x000000);   
 
     // draw particles below fluid simulations:
+    images_simulation_2d_to_3d_upload();
     particle_renderAllToSurface(0, PARTICLE_BELOW_WATER,
         images_simulation_image);
+    images_simulation_3d_to_2d_download();
 }
 
 void simulation_drawAfterWater() {
-    simulation_unlockSurface();
+    //simulation_unlockSurface();
 
     // draw particles on top of fluid simulations:
+    images_simulation_2d_to_3d_upload();
     particle_renderAllToSurface(PARTICLE_BELOW_WATER, PARTICLE_TYPE_COUNT, 
         images_simulation_image);
+    images_simulation_3d_to_2d_download();
 }
 
 void simulation_finalRenderToArray(uint8_t *render_data,

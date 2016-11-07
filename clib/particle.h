@@ -1,4 +1,7 @@
 
+#ifndef _SANDBOX_PARTICLE_H_
+#define _SANDBOX_PARTICLE_H_
+
 #include <SDL2/SDL.h>
 
 #define PARTICLE_GRASS 0
@@ -24,4 +27,6 @@ void particle_move(struct particle_instance* inst, double x, double y);
 // convenience functions for particle spawning:
 struct particle_instance *particle_addRandom(int type);
 void particle_addRandomCrowd(int type, int amount);
+
+#endif  // _SANDBOX_PARTICLE_H_
 
