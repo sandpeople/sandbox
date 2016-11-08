@@ -104,8 +104,7 @@ void simulation_drawBeforeWater() {
 
     // draw particles below fluid simulations:
     images_simulation_2d_to_3d_upload();
-    particle_renderAllToSurface(0, PARTICLE_BELOW_WATER,
-        images_simulation_image);
+    particle_renderAll(0, PARTICLE_BELOW_WATER);
     images_simulation_3d_to_2d_download();
 }
 
@@ -114,8 +113,7 @@ void simulation_drawAfterWater() {
 
     // draw particles on top of fluid simulations:
     images_simulation_2d_to_3d_upload();
-    particle_renderAllToSurface(PARTICLE_BELOW_WATER, PARTICLE_TYPE_COUNT, 
-        images_simulation_image);
+    particle_renderAll(PARTICLE_BELOW_WATER, PARTICLE_TYPE_COUNT);
     images_simulation_3d_to_2d_download();
 }
 

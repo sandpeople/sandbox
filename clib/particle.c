@@ -184,10 +184,10 @@ void particle_updateAll(void) {
     }
 }
 
-void particle_renderAllToSurface(int from_type, int to_type, SDL_Surface *srf) {
+void particle_renderAll(int from_type, int to_type) {
     if (to_type <= from_type) return;
     for (int i = from_type; i < to_type; i++) {
-        particle_renderToSurface(i, srf);
+        particle_render(i);
     }
 }
 

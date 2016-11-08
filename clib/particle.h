@@ -13,8 +13,8 @@
 // overall particle management:
 int particle_loadImage(int type, const char *path);
 void particle_wipeAll(int type);
-void particle_renderToSurface(int type, SDL_Surface *srf);
-void particle_renderAllToSurface(int from_type, int to_type, SDL_Surface *srf);
+void particle_render(int type);
+void particle_renderAll(int from_type, int to_type);
 void particle_updateAll(void);
 
 // managing particle instances:
