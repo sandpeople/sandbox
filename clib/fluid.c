@@ -63,8 +63,13 @@ void fluid_drawAllIfThere(int x, int y) {
     }
 }
 
-double fluid_tryTransfer(int type, int target_x, int target_y, double amount, double max) {
-     if (fluid_map[type][target_x + target_y * fluid_map_x] + amount > max) {
+double fluid_tryTransfer(int type, int target_x, int target_y,
+        double amount, double max) {
+    if (target_x < 0 || target_x >= fluid_map_x ||
+            target_y < 0 || target_y >= fluid_map_y) {
+        return;
+    }
+    if (fluid_map[type][target_x + target_y * fluid_map_x] + amount > max) {
         amount = max - fluid_map[type][target_x + target_y * fluid_map_x];
         if (amount < 0) {
             amount = 0;
@@ -130,7 +135,9 @@ void fluid_update(int type, int x, int y) {
     // transfer along the slope of the ground:
     double ownAmount = fluid_map[type][x + y * fluid_map_x];
     if (target_x != x || target_y != y) {
-        if (target_x >= 0 && x < fluid_map_x && y >= 0 &&
+        if (target_x >= 0 && target_x < fluid_map_x && target_y >= 0 &&
+                target_y < fluid_map_y &&
+                x >= 0 && x < fluid_map_x && y >= 0 &&
                 y < fluid_map_y) {
             double transfer = 0.2 * ownAmount;
             if (transfer > fluid_map[type][x + y * fluid_map_x] * 0.5) {

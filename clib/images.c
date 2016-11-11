@@ -7,6 +7,9 @@
 #include <SDL2/SDL_image.h>
 
 #include "particle.h"
+#include "simulation.h"
+
+static uint32_t format = SDL_PIXELFORMAT_RGBA8888;
 
 SDL_Surface *images_simulation_image = NULL;
 SDL_Texture *images_simulation_3d_image = NULL;
@@ -22,73 +25,81 @@ void images_init_simulation_image(int screen_width, int screen_height) {
         SDL_FreeSurface(images_simulation_image);
         images_simulation_image = NULL;
     }
-    printf("CREATING IMAGE\n");
     simulation_screen_width = screen_width;
     simulation_screen_height = screen_height;
-    images_simulation_image = SDL_CreateRGBSurface(
-        0, screen_width, screen_height, 32,
-        0xff000000,
-        0x00ff0000,
-        0x0000ff00,
-        0x000000ff
-    );
+    images_simulation_image = SDL_CreateRGBSurfaceWithFormat(
+        0, screen_width, screen_height, 0, format);
     assert(images_simulation_image->format->BitsPerPixel == 32);
+    images_simulation_3d_image = SDL_CreateTexture(
+        simulation_getRenderer(), format,
+        SDL_TEXTUREACCESS_TARGET, screen_width, screen_height); 
 }
 
 void images_simulation_3d_clear() {
-    // FIXME
-    assert(0);  // FIXME implement this
+    assert(images_simulation_3d_image != NULL);
+    SDL_SetRenderTarget(simulation_getRenderer(), 
+        images_simulation_3d_image);
+    SDL_RenderClear(simulation_getRenderer());
 }
 
 void images_simulation_2d_to_3d_upload() {
-    int texture_pitch = 0;
-    void **texptr;
-    SDL_LockTexture(
-        images_simulation_3d_image,
-        0, (void**)&texptr,
-        &texture_pitch);
-    assert(texture_pitch == 0);
-    memcpy(texptr, images_simulation_image->pixels,
-        images_simulation_image->w *
-        images_simulation_image->h *
-        4);
-    SDL_UnlockTexture(images_simulation_3d_image);
-
-    // FIXME !!!!
-    assert(0);   // FIXME: set render to texture target
+    assert(images_simulation_3d_image != NULL);
+    if (SDL_UpdateTexture(
+            images_simulation_3d_image, NULL,
+            images_simulation_image->pixels,
+            images_simulation_image->pitch) != 0) {
+        fprintf(stderr, "SDL error with SDL_UpdateTexture: %s\n",
+            SDL_GetError());
+        return;
+    }
+    SDL_SetRenderTarget(simulation_getRenderer(),
+        images_simulation_3d_image);
 }
 
 void images_simulation_3d_to_2d_download() {
-    int texture_pitch = 0;
-    void **texptr;
-    SDL_LockTexture(
-        images_simulation_3d_image,
-        0, (void**)&texptr,
-        &texture_pitch);
-    assert(texture_pitch == 0);
-    memcpy(images_simulation_image->pixels, texptr,
+    assert(images_simulation_3d_image != NULL);
+    SDL_Rect dst = {0, 0,
+        images_simulation_image->w,
+        images_simulation_image->h};
+    SDL_Texture *oldTarget = SDL_GetRenderTarget(simulation_getRenderer()); 
+    SDL_SetRenderTarget(simulation_getRenderer(), NULL);
+    SDL_RenderCopy(simulation_getRenderer(), images_simulation_3d_image,
+        NULL, &dst);
+    void *data = NULL;
+    int result = SDL_RenderReadPixels(simulation_getRenderer(),
+        &dst, format, images_simulation_image->pixels, 0); 
+/*    memcpy(images_simulation_image->pixels, data,
         images_simulation_image->w *
         images_simulation_image->h *
-        4);
-    SDL_UnlockTexture(images_simulation_3d_image); 
+        4);*/
+    SDL_SetRenderTarget(simulation_getRenderer(), oldTarget);
 }
 
+static SDL_Surface* _blitOnTopTempImage = NULL;
 void images_simulation_3d_to_2d_blit_ontop() {
-    int texture_pitch = 0;
-    void **texptr;
-    SDL_LockTexture(
-        images_simulation_3d_image,
-        0, (void**)&texptr,
-        &texture_pitch);
-    assert(texture_pitch == 0);
-    memcpy(images_simulation_image->pixels, texptr,
+    assert(images_simulation_3d_image != NULL);
+    if (!_blitOnTopTempImage) {
+        _blitOnTopTempImage = SDL_CreateRGBSurfaceWithFormat(
+            0, simulation_screen_width,
+            simulation_screen_height, 0, format);
+    }
+    SDL_Rect dst = {0, 0,
+        images_simulation_image->w,
+        images_simulation_image->h};
+    SDL_Texture *oldTarget = SDL_GetRenderTarget(simulation_getRenderer());
+    SDL_SetRenderTarget(simulation_getRenderer(), NULL);
+    SDL_RenderCopy(simulation_getRenderer(), images_simulation_3d_image,
+        NULL, &dst);
+    void *data = NULL;
+    int result = SDL_RenderReadPixels(simulation_getRenderer(),
+        &dst, SDL_PIXELFORMAT_RGBA8888, &data, 0);
+    memcpy(_blitOnTopTempImage, data,
         images_simulation_image->w *
         images_simulation_image->h *
         4);
-    SDL_UnlockTexture(images_simulation_3d_image);
-
-    // FIXME !!!!
-    assert(0); /// FIXME implement blit on top process !!!
+    SDL_SetRenderTarget(simulation_getRenderer(), oldTarget);
+    SDL_BlitSurface(_blitOnTopTempImage, NULL, images_simulation_image,
+        NULL);
 }
 
 SDL_Surface *image_load_converted(const char *path, int alpha) {
