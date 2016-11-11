@@ -10,7 +10,6 @@ apt-get install libfreenect-dev libsdl2-image-2.0-0 python-freenect libcv-dev li
 
 ## build
 
-cd clib
 make
 
 
