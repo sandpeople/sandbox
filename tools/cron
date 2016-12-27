@@ -14,3 +14,5 @@ if [ $LOCAL = $BASE ]; then
     git pull
     killall main.py
     python ./main.py
+fi
+
