@@ -94,12 +94,15 @@ void fluid_update(int type, int x, int y) {
     double velocity_x = 0;
     double velocity_y = 0;
 
+    // Get basic velocity from ground:
     topology_calculate_drift(x, y,
         &velocity_x, &velocity_y);
 
-    velocity_x /= 10.0;
-    velocity_y /= 10.0;
+    // Scale velocity:
+    velocity_x /= 5.0;
+    velocity_y /= 5.0;
     
+    // Limit to jump length:
     if (velocity_x > jumpLength) {
         velocity_x = jumpLength;
     }
@@ -119,20 +122,26 @@ void fluid_update(int type, int x, int y) {
     int target_x = (double)x + velocity_x * xfac;
     int target_y = (double)y + velocity_y * yfac;
 
-    if (target_x > x + 2) {
-        target_x = x + 2;
+    if (target_x > x + 5) {
+        target_x = x + 5;
     }
-    if (target_y > y + 2) {
-        target_y = y + 2;
+    if (target_y > y + 5) {
+        target_y = y + 5;
     }
-    if (target_x < x - 2) {
-        target_x = x - 2;
+    if (target_x < x - 5) {
+        target_x = x - 5;
     }
-    if (target_y < y - 2) {
-        target_y = y - 2;
+    if (target_y < y - 5) {
+        target_y = y - 5;
     }
 
-    // transfer along the slope of the ground:
+    // Add a bit of jitter:
+    target_x += (int)(rand0to1() - 0.5);
+    target_x -= (int)(rand0to1() - 0.5);
+    target_y += (int)(rand0to1() - 0.5);
+    target_y -= (int)(rand0to1() - 0.5);
+
+    // Transfer along the slope of the ground:
     double ownAmount = fluid_map[type][x + y * fluid_map_x];
     if (target_x != x || target_y != y) {
         if (target_x >= 0 && target_x < fluid_map_x && target_y >= 0 &&
@@ -149,23 +158,26 @@ void fluid_update(int type, int x, int y) {
         }
     }
 
-    // transfer evenly to all neighboring pixels:
-    for (int neighbor_x = -1; neighbor_x <= 1; neighbor_x += 2) {
-        for (int neighbor_y = -1; neighbor_y <= 1; neighbor_y += 2) {
-            // transfer to around 10% of own amount:
+    // Transfer evenly to all neighboring pixels:
+    for (int neighbor_x = -2; neighbor_x <= 2; neighbor_x += 1) {
+        for (int neighbor_y = -2; neighbor_y <= 2; neighbor_y += 1) {
+            if (neighbor_x == 0 && neighbor_y == 0)
+                continue;
+
+            // Transfer to around 10% of own amount:
             double transfer = 0.1 * ownAmount;
             if (transfer > ownAmount) {
                 transfer = ownAmount;
             }
 
-            // transfer target limit should be fmax(ownAmount, 10.0):
+            // Transfer target limit should be fmax(ownAmount, 10.0):
             double limit = fmax(ownAmount, 10.0); 
 
-            // do transfer and see how much we managed to transfer:
+            // Do transfer and see how much we managed to transfer:
             double gone = fluid_tryTransfer(type, x + neighbor_x,
                 y + neighbor_y, transfer, limit);
 
-            // reduce transferred fluid from ourselves:
+            // Reduce transferred fluid from ourselves:
             fluid_map[type][x + y * fluid_map_x] -= gone;
             ownAmount = fluid_map[type][x + y * fluid_map_x];
         }

@@ -10,6 +10,7 @@ SDL_Surface *image_load_converted(const char *path, int alpha);
 SDL_Surface *images_duplicate(SDL_Surface *old);
 
 extern SDL_Surface *images_simulation_image;
+extern SDL_Texture *images_simulation_3d_image;
 
 /// Clears the GPU accelerated render target
 void images_simulation_3d_clear();
