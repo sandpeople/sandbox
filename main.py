@@ -1,11 +1,11 @@
 #!/usr/bin/python
 from freenect import sync_get_depth
-import cv2.cv as cv
+import cv2 as cv
 import cv2
 import numpy as np
 import frame_convert
 import sys
-from clib_interface import call_clib_sim
+import clib_interface
 import server
 import pickle
 import threading
@@ -22,10 +22,15 @@ serverd.start()
 height=80
 offset=3.5
 
+screen_resolution_x = 1280
+screen_resolution_y = 720
+
 run=True
 gradient=cv2.imread('gradient.bmp',1)
-cv.NamedWindow('Depth')
-cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN, cv.CV_WINDOW_FULLSCREEN)
+cv2.namedWindow('Depth', cv2.WINDOW_NORMAL)
+cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN,
+    cv2.WINDOW_FULLSCREEN)
+fullscreen = True
 
 def contractions(img, points):
     global done_image
@@ -72,20 +77,40 @@ img = get_image()
 cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
 while run is True:
-    # take kinect image if we have one:
+    # Take kinect image if we have one:
     img = get_image()
 
-    # call C code for simulation:
+    # Call C code for simulation:
     #contractions(img, points)
-    call_clib_sim(img, cimg)
+    clib_interface.sim(img, cimg)
     contractions(cimg, points)
-    # show resulting image:
-    cv2.imshow('Depth', cimg)
-   
-    # quit if escape is pressed: 
-    if cv.WaitKey(10) == ord('1'):
-        print "lala 1"
 
-    if cv.WaitKey(10) == 27:
+    # Show resulting image:
+    scale_width = screen_resolution_x / img.shape[1]
+    scale_height = screen_resolution_y / img.shape[0]
+    resized = cv2.resize(cimg, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
+    cv2.imshow('Depth', resized)
+   
+    key = cv.waitKey(10)
+
+    if key == 27:
+        # Quit if escape is pressed:
         sys.exit(0)
+    elif key == 65480 or key == 102:
+        # Toggle fullscreen:
+        if fullscreen:
+            fullscreen = False
+            cv2.destroyAllWindows()
+            cv2.namedWindow('Depth', cv2.WINDOW_AUTOSIZE)
+            cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN,
+                cv.WINDOW_FULLSCREEN)
+        else:
+            fullscreen = True
+            cv2.destroyAllWindows()
+            cv2.namedWindow('Depth', cv2.WINDOW_NORMAL)
+            cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN,
+                cv.WINDOW_FULLSCREEN)
+    elif key >= 0:
+        print("UNKNOWN KEY: " + str(key))
+    
 
