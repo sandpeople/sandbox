@@ -1,11 +1,15 @@
+#!/usr/bin/python
+
 import cv2
-import cv2.cv as cv
+import cv2 as cv
 from freenect import sync_get_depth
 import frame_convert
 import numpy as np
 from skimage import exposure
 import pickle
- 
+
+screen_resolution_x = 1280
+screen_resolution_y = 1024 
 
 # initialize the list of reference points and boolean indicating
 # whether cropping is being performed or not
@@ -121,7 +125,9 @@ def click_and_crop(event, x, y, flags, param):
         cv2.imshow("image", get_image()) 
 
 image=get_image()
-cv2.namedWindow("image")
+cv2.namedWindow("image", cv2.WINDOW_NORMAL)
+cv2.setWindowProperty("image", cv2.WND_PROP_FULLSCREEN,
+    cv2.WINDOW_FULLSCREEN)
 cv2.setMouseCallback("image", click_and_crop)
  
 # keep looping until the 'q' key is pressed
@@ -142,7 +148,8 @@ while True:
     cv2.putText(image, "3", offsetstrup[2], fontFace, fontScale,(offset,offset), thickness, 8);
     cv2.circle(image,offsetstrup[3], 5, (230), -1)
     cv2.putText(image, "4", offsetstrup[3], fontFace, fontScale,(offset,offset), thickness, 8);
-    cv2.imshow("image", image)
+    resized = cv2.resize(image, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
+    cv2.imshow("image", resized)
     key = cv2.waitKey(1) & 0xFF   
  
     # if the 'c' key is pressed, break from the loop
@@ -154,7 +161,7 @@ if len(points) == 4:
     print "write!!"
     while 1:
         cv2.imshow("image", done_image)
-        cv.WaitKey(10)
+        cv.waitKey(10)
         #contractions(get_image(), points)
  
 # close all open windows

@@ -1,11 +1,10 @@
 #!/usr/bin/python
 from freenect import sync_get_depth
-import cv2.cv as cv
-import cv2
+import cv2 
 import numpy as np
 import frame_convert
 import sys
-from clib_interface import call_clib_sim
+import clib_interface
 import server
 import pickle
 import threading
@@ -13,19 +12,37 @@ from Queue import Queue
 points=pickle.load(open( "cal.p", "rb" ))
 print points
 
+
+enable_http=True
+
 webapi_queue=Queue()
-server=server.sandcontrol()
-serverd=threading.Thread(target = server.launch_control)
-serverd.daemon = True
-serverd.start()
+if enable_http:
+    server=server.sandcontrol()
+    serverd=threading.Thread(target = server.launch_control)
+    serverd.daemon = True
+    serverd.start()
 
 height=80
 offset=3.5
 
+fullscreen_const = None
+winnormal_const = None
+try:
+    fullscreen_const = cv2.cv.CV_WINDOW_FULLSCREEN
+    winnormal_const = cv2.cv.CV_WINDOW_NORMAL
+except AttributeError:
+    fullscreen_const = cv2.WINDOW_FULLSCREEN
+    winnormal_const = cv2.WINDOW_NORMAL
+
+screen_resolution_x = 800
+screen_resolution_y = 600
+
 run=True
 gradient=cv2.imread('gradient.bmp',1)
-cv.NamedWindow('Depth')
-cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN, cv.CV_WINDOW_FULLSCREEN)
+cv2.namedWindow('Depth', cv2.WINDOW_NORMAL)
+cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN,
+    fullscreen_const)
+fullscreen = True
 
 def contractions(img, points):
     global done_image
@@ -72,20 +89,38 @@ img = get_image()
 cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
 while run is True:
-    # take kinect image if we have one:
+    # Take kinect image if we have one:
     img = get_image()
 
-    # call C code for simulation:
+    # Call C code for simulation:
     #contractions(img, points)
-    call_clib_sim(img, cimg)
+    clib_interface.sim(img, cimg)
     contractions(cimg, points)
-    # show resulting image:
-    cv2.imshow('Depth', cimg)
-   
-    # quit if escape is pressed: 
-    if cv.WaitKey(10) == ord('1'):
-        print "lala 1"
 
-    if cv.WaitKey(10) == 27:
+    # Show resulting image:
+    resized = cv2.resize(cimg, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
+    cv2.imshow('Depth', resized)
+   
+    key = cv2.waitKey(10)
+
+    if key == 27:
+        # Quit if escape is pressed:
         sys.exit(0)
+    elif key == 65480 or key == 102:
+        # Toggle fullscreen:
+        if fullscreen:
+            fullscreen = False
+            cv2.destroyAllWindows()
+            cv2.namedWindow('Depth', cv2.WINDOW_AUTOSIZE)
+            cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN,
+                fullscreen_const)
+        else:
+            fullscreen = True
+            cv2.destroyAllWindows()
+            cv2.namedWindow('Depth', winnormal_const)
+            cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN,
+                fullscreen_const)
+    elif key >= 0:
+        print("UNKNOWN KEY: " + str(key))
+    
 

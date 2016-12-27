@@ -67,7 +67,7 @@ double fluid_tryTransfer(int type, int target_x, int target_y,
         double amount, double max) {
     if (target_x < 0 || target_x >= fluid_map_x ||
             target_y < 0 || target_y >= fluid_map_y) {
-        return;
+        return 0;
     }
     if (fluid_map[type][target_x + target_y * fluid_map_x] + amount > max) {
         amount = max - fluid_map[type][target_x + target_y * fluid_map_x];
