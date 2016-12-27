@@ -12,6 +12,7 @@ BASE=$(git merge-base @ "$UPSTREAM")
 
 if [ $LOCAL = $BASE ]; then
     git pull
+    make
     killall main.py
     python ./main.py
 fi
