@@ -6,7 +6,8 @@ from jinja2 import Environment, FileSystemLoader
 
 class sandcontrol(object):
     def __init__(self, **task_settings):
-        self.queue = task_settings.get('queue', None)
+        self.pqueue = task_settings.get('queue', None)
+        self.picture = None
 
     @cherrypy.expose
     def index(self):
@@ -18,6 +19,15 @@ class sandcontrol(object):
     def switch(self, id):
         print("button nr {} pressed".format(id))
         return json.dumps({"text" : "button {} ".format(id)})
+
+    @cherrypy.expose
+    def pic(self):
+        if not pqueue.empty():
+            try:
+                self.picture = pqueue.get(block=False)
+            except:
+                pass
+        return self.picture
 
     def launch_control(self):
         start()

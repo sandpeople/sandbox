@@ -15,9 +15,10 @@ print points
 
 enable_http=True
 
-webapi_queue=Queue()
+pqueue=Queue(maxsize=1)
+
 if enable_http:
-    server=server.sandcontrol()
+    server=server.sandcontrol(queue=pqueue)
     serverd=threading.Thread(target = server.launch_control)
     serverd.daemon = True
     serverd.start()
@@ -99,6 +100,11 @@ while run is True:
 
     # Show resulting image:
     resized = cv2.resize(cimg, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
+    if not pqueue.full():
+        try:
+            pqueue.put(resized, block=False)
+        except:
+            pass
     cv2.imshow('Depth', resized)
    
     key = cv2.waitKey(10)
