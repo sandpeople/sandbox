@@ -23,7 +23,7 @@ height=80
 offset=3.5
 
 screen_resolution_x = 1280
-screen_resolution_y = 720
+screen_resolution_y = 1024
 
 run=True
 gradient=cv2.imread('gradient.bmp',1)
@@ -86,8 +86,6 @@ while run is True:
     contractions(cimg, points)
 
     # Show resulting image:
-    scale_width = screen_resolution_x / img.shape[1]
-    scale_height = screen_resolution_y / img.shape[0]
     resized = cv2.resize(cimg, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
     cv2.imshow('Depth', resized)
    
