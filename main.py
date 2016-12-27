@@ -1,7 +1,6 @@
 #!/usr/bin/python
 from freenect import sync_get_depth
-import cv2 as cv
-import cv2
+import cv2 
 import numpy as np
 import frame_convert
 import sys
@@ -22,14 +21,23 @@ serverd.start()
 height=80
 offset=3.5
 
-screen_resolution_x = 1280
-screen_resolution_y = 1024
+fullscreen_const = None
+winnormal_const = None
+try:
+    fullscreen_const = cv2.cv.CV_WINDOW_FULLSCREEN
+    winnormal_const = cv2.cv.CV_WINDOW_NORMAL
+except AttributeError:
+    fullscreen_const = cv2.WINDOW_FULLSCREEN
+    winnormal_const = cv2.WINDOW_NORMAL
+
+screen_resolution_x = 800
+screen_resolution_y = 600
 
 run=True
 gradient=cv2.imread('gradient.bmp',1)
 cv2.namedWindow('Depth', cv2.WINDOW_NORMAL)
 cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN,
-    cv2.WINDOW_FULLSCREEN)
+    fullscreen_const)
 fullscreen = True
 
 def contractions(img, points):
@@ -89,7 +97,7 @@ while run is True:
     resized = cv2.resize(cimg, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
     cv2.imshow('Depth', resized)
    
-    key = cv.waitKey(10)
+    key = cv2.waitKey(10)
 
     if key == 27:
         # Quit if escape is pressed:
@@ -101,13 +109,13 @@ while run is True:
             cv2.destroyAllWindows()
             cv2.namedWindow('Depth', cv2.WINDOW_AUTOSIZE)
             cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN,
-                cv.WINDOW_FULLSCREEN)
+                fullscreen_const)
         else:
             fullscreen = True
             cv2.destroyAllWindows()
-            cv2.namedWindow('Depth', cv2.WINDOW_NORMAL)
+            cv2.namedWindow('Depth', winnormal_const)
             cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN,
-                cv.WINDOW_FULLSCREEN)
+                fullscreen_const)
     elif key >= 0:
         print("UNKNOWN KEY: " + str(key))
     
