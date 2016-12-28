@@ -181,11 +181,11 @@ while True:
     cv2.putText(image, "4", offsetstrup[3], fontFace, fontScale,(offset,offset), thickness, 8);
     image_float = np.ndarray.astype(image, dtype=np.float64)
     image_float = (255.0 - ((255.0 - image_float) * height_scale + height_shift))
-    image_float *= 0.5
-    image_float = image_float.clip(min=0.0, max=255.0)
-    image = np.ndarray.astype(image_float, dtype=np.uint8)
-    resized = cv2.resize(image, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
-    cv2.imshow("image", resized)
+    image_float *= 0.7
+    resized = cv2.resize(image_float, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
+    resized = resized.clip(min=0.0, max=255.0)
+    image = np.ndarray.astype(resized, dtype=np.uint8)
+    cv2.imshow("image", image)
     key = cv2.waitKey(1) & 0xFF   
  
     # if the 'c' or escape key is pressed, break from the loop

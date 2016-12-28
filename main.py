@@ -31,7 +31,10 @@ if enable_http:
 # Various options:
 parser = configparser.ConfigParser()
 parser.read("config.ini")
-height_shift = float(parser.get("main", "height_shift"))
+try:
+    height_shift = float(parser.get("main", "height_shift"))
+except configparser.NoOptionError:
+    height_shift = 0
 height_scale = float(parser.get("main", "height_scale"))
 offset=3.5
 screen_resolution_x = int(parser.get("main", "screen_resolution_x"))
