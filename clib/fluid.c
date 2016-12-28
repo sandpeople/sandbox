@@ -242,7 +242,7 @@ void fluid_randomSpawns() {
         double y = rand0to1();
         int fluid_x = x * fluid_map_x;
         int fluid_y = y * fluid_map_y;
-        fluid_spawn(FLUID_WATER, fluid_x, fluid_y, (30.0 + rand0to1() * 10.0) / reduce_factor);
+        fluid_spawn(FLUID_WATER, fluid_x, fluid_y, (60.0 + rand0to1() * 10.0) / reduce_factor);
     }
 }
 
