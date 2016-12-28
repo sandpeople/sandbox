@@ -165,7 +165,7 @@ while True:
     cv2.putText(image, "3", offsetstrup[2], fontFace, fontScale,(offset,offset), thickness, 8);
     cv2.circle(image,offsetstrup[3], 5, (230), -1)
     cv2.putText(image, "4", offsetstrup[3], fontFace, fontScale,(offset,offset), thickness, 8);
-    image *= height_scale
+    image *= (255 - (255 - image) * height_scale)
     image -= height_shift
     resized = cv2.resize(image, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
     cv2.imshow("image", resized)
