@@ -16,6 +16,7 @@ void topology_setHeightConfig(double heightShift, double heightScale) {
     pthread_mutex_lock(topology_lock);
     config_heightShift = heightShift;
     config_heightScale = heightScale;
+    printf("SHIFT: %f\n", config_heightShift);
     pthread_mutex_unlock(topology_lock);
 }
 
@@ -218,8 +219,8 @@ void topology_drawToSimImage(const uint8_t* depth_array, int xsize, int ysize) {
             depth_source_x * ysize);
 
         // Set height:
-        int height = 255 - depth_array[depth_offset];
-        height_map[x + y * xsize] = (double)height;
+        int height = ((double)(255 - depth_array[depth_offset]) * config_heightScale + config_heightShift);
+        height_map[x + y * xsize] = height;
 
         // Calculate gradient offset:
         int height_color_range_min = 60;
