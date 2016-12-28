@@ -11,20 +11,27 @@ static int fluid_map_x = 0;
 static int fluid_map_y = 0;
 double *fluid_map[FLUID_COUNT] = { 0 };
 
+double reduce_factor = 1.5;
+
 void fluid_init(int width, int height) {
+    int new_fluid_map_x = (int)((double)width / reduce_factor);
+    int new_fluid_map_y = (int)((double)height / reduce_factor);
     if (fluid_map[0]) {
-        if (fluid_map_x == width && fluid_map_y == height) {
+        if (fluid_map_x == new_fluid_map_x &&
+                fluid_map_y == new_fluid_map_y) {
             return;
         }
         for (int i = 0; i < FLUID_COUNT; i++) {
             free(fluid_map[i]);
         }
     }
-    fluid_map_x = width;
-    fluid_map_y = height;
+    fluid_map_x = new_fluid_map_x;
+    fluid_map_y = new_fluid_map_y;
     for (int i = 0; i < FLUID_COUNT; i++) {
-        fluid_map[i] = (double *)malloc(sizeof(double) * width * height);
-        memset(fluid_map[i], 0, sizeof(double) * width * height);
+        fluid_map[i] = (double *)malloc(sizeof(double) *
+            fluid_map_x * fluid_map_y);
+        memset(fluid_map[i], 0, sizeof(double) *
+            fluid_map_x * fluid_map_y);
     }
 }
 
@@ -44,22 +51,31 @@ double fluid_check(int type, int x, int y) {
     return 5.0;
 }
 
-void fluid_drawIfThere(int type, int x, int y) {
-    double alpha = fluid_check(type, x, y) +
-        fluid_check(type, x - 1, y - 1) * 0.5 +
-        fluid_check(type, x - 1, y) * 0.5 +
-        fluid_check(type, x - 1, y + 1) * 0.5 +
-        fluid_check(type, x + 1, y) * 0.5 +
-        fluid_check(type, x + 1, y) * 0.5 +
-        fluid_check(type, x + 1, y + 1) * 0.5;
-    alpha = alpha * alpha;
-    if (alpha > 0.7) alpha = 0.7;
-    simulation_addPixel(x + y * fluid_map_x, 255, 0, 0, alpha * 255);
+double fluid_checkWorld(int type, int x, int y) {
+    int x2 = (int)((double)x / reduce_factor);
+    int y2 = (int)((double)y / reduce_factor);
+    return fluid_check(type, x2, y2);
 }
 
-void fluid_drawAllIfThere(int x, int y) {
+void fluid_drawIfThere(int type, int worldX, int worldY,
+        int xsize) {
+    int x = worldX;
+    int y = worldY;
+    double alpha = fluid_checkWorld(type, x, y) +
+        fluid_checkWorld(type, x - 1, y - 1) * 0.5 +
+        fluid_checkWorld(type, x - 1, y) * 0.5 +
+        fluid_checkWorld(type, x - 1, y + 1) * 0.5 +
+        fluid_checkWorld(type, x + 1, y) * 0.5 +
+        fluid_checkWorld(type, x + 1, y) * 0.5 +
+        fluid_checkWorld(type, x + 1, y + 1) * 0.5;
+    alpha = alpha * alpha;
+    if (alpha > 0.7) alpha = 0.7;
+    simulation_addPixel(x + y * xsize, 255, 0, 0, alpha * 255);
+}
+
+void fluid_drawAllIfThere(int x, int y, int xsize) {
     for (int i = 0; i < FLUID_COUNT; i++) {
-        fluid_drawIfThere(i, x, y);
+        fluid_drawIfThere(i, x, y, xsize);
     }
 }
 
@@ -90,12 +106,15 @@ void fluid_update(int type, int x, int y) {
         return;
     }
 
+    int worldX = ((double)x * reduce_factor);
+    int worldY = ((double)y * reduce_factor);
+
     double jumpLength = 3;
     double velocity_x = 0;
     double velocity_y = 0;
 
     // Get basic velocity from ground:
-    topology_calculate_drift(x, y,
+    topology_calculate_drift(worldX, worldY,
         &velocity_x, &velocity_y);
 
     // Scale velocity:
@@ -185,18 +204,45 @@ void fluid_update(int type, int x, int y) {
 }
 
 void fluid_randomSpawns() {
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 200; i++) {
         double x = rand0to1();
         double y = rand0to1();
-        int world_x = x * fluid_map_x;
-        int world_y = y * fluid_map_y;
-        fluid_spawn(FLUID_WATER, world_x, world_y, 5000 + rand0to1() * 1000);
+        int fluid_x = x * fluid_map_x;
+        int fluid_y = y * fluid_map_y;
+        fluid_spawn(FLUID_WATER, fluid_x, fluid_y, 5000 + rand0to1() * 1000);
     }
 }
 
-void fluid_updateAll(int x, int y) {
-    for (int i = 0; i < FLUID_COUNT; i++) {
-        fluid_update(i, x, y);
+void fluid_updateAndDrawAll(int xsize, int ysize) {
+    int fluidUpdates = simulation_getFluidUpdateCount();
+    int x = 0;
+    int y = 0;
+    for (int j = 0; j < fluidUpdates; j++) {
+        for (int i = 0; i < fluid_map_x * fluid_map_y; ++i) {
+            // Update fluid simulation in this spot:
+            for (int k = 0; k < FLUID_COUNT; k++) {
+                fluid_update(k, x, y);
+            }
+
+            // Advance coordinates:
+            x++;
+            if (x >= fluid_map_x) {
+                x -= fluid_map_x;
+                y++;
+            }        
+        }
+    }
+	x = 0;
+    y = 0; 
+    for (int i = 0; i < xsize * ysize; ++i) {
+		fluid_drawAllIfThere(x, y, xsize);
+
+        // Advance coordinates:
+        x++;
+        if (x >= xsize) {
+            x -= xsize;
+            y++;
+        }
     }
 }
 

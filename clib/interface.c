@@ -39,23 +39,7 @@ void interface_run(
     // Fluid updates:
     simulation_lockSurface();
     assert(simulation_isSurfaceLocked());
-    int fluidUpdates = simulation_getFluidUpdateCount();
-    int x = 0;
-    int y = 0;
-    for (int i = 0; i < xsize * ysize; ++i) {
-        // Update fluid simulation in this spot:
-        for (int k = 0; k < fluidUpdates; k++) {
-            fluid_updateAll(x, y);
-        }
-        fluid_drawAllIfThere(x, y);
-
-        // Advance coordinates:
-        x++;
-        if (x >= xsize) {
-            x -= xsize;
-            y++;
-        }
-    }
+    fluid_updateAndDrawAll(xsize, ysize);
 
     //simulation_updateMovingObjects();
     simulation_unlockSurface();
