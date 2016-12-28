@@ -8,11 +8,15 @@ import frame_convert
 import numpy as np
 from skimage import exposure
 import pickle
+import sys
 
 # Various options:
 parser = configparser.ConfigParser()
 parser.read("config.ini")
-height_shift = float(parser.get("main", "height_shift"))
+try:
+    height_shift = float(parser.get("main", "height_shift"))
+except configparser.NoOptionError:
+    height_shift = 0
 height_scale = float(parser.get("main", "height_scale"))
 offset=3.5
 screen_resolution_x = int(parser.get("main", "screen_resolution_x"))
@@ -90,8 +94,18 @@ def contractions(img, points):
     print dst
     done_image=dst
 
+test_img = cv2.imread('images/kinect.png', 0)
+no_kinect = False
 def get_depth():
-    return frame_convert.pretty_depth(sync_get_depth()[0])
+    global no_kinect
+    if no_kinect:
+        return test_img
+    get_depth_result = sync_get_depth()
+    if get_depth_result == None or \
+            get_depth_result[0] == None:
+        no_kinect = True
+        return test_img
+    return frame_convert.pretty_depth(get_depth_result[0])
 
 def get_image():
     image = get_depth()
@@ -165,15 +179,22 @@ while True:
     cv2.putText(image, "3", offsetstrup[2], fontFace, fontScale,(offset,offset), thickness, 8);
     cv2.circle(image,offsetstrup[3], 5, (230), -1)
     cv2.putText(image, "4", offsetstrup[3], fontFace, fontScale,(offset,offset), thickness, 8);
-    image *= (255 - (255 - image) * height_scale)
-    image -= height_shift
+    image_float = np.ndarray.astype(image, dtype=np.float64)
+    image_float = (255.0 - ((255.0 - image_float) * height_scale + height_shift))
+    image_float = image_float.clip(min=0.0, max=255.0)
+    image = np.ndarray.astype(image_float, dtype=np.uint8)
     resized = cv2.resize(image, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
     cv2.imshow("image", resized)
     key = cv2.waitKey(1) & 0xFF   
  
-    # if the 'c' key is pressed, break from the loop
-    if key == ord("c"):
-        break
+    # if the 'c' or escape key is pressed, break from the loop
+    if key == ord("c") or key == 27:
+        cv2.destroyAllWindows()
+        sys.exit(0)
+    elif key == 255:
+        continue
+    else:
+        print("UNKNOWN KEY: " + str(key))
 
 if len(points) == 4:
     pickle.dump(points, open( savefile, "wb" ))
