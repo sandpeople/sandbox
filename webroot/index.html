@@ -18,9 +18,96 @@
     <link href="css/jumbotron-narrow.css" rel="stylesheet">
 
     <script src="js/jquery-2.1.4.min.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+<!--
+// START IMG COORD. FOO
+// copied .. http://www.chestysoft.com/imagefile/javascript/get-coordinates.asp
+// expect an IMG like 
+// <img src="red.gif" width="400" height="300" alt="" id="myImgId" />
+// <p>X:<span id="x"></span></p>
+// <p>Y:<span id="y"></span></p>
+function FindPosition(oElement)
+	{
+	    if(typeof( oElement.offsetParent ) != "undefined")
+        {
+        for(var posX = 0, posY = 0; oElement; oElement = oElement.offsetParent)
+            {
+	    posX += oElement.offsetLeft;
+	    posY += oElement.offsetTop;
+	    }
+	return [ posX, posY ];
+	}
+    else
+        {
+	return [ oElement.x, oElement.y ];
+	}
+}
+function GetCoordinates(e)
+{
+    var PosX = 0;
+    var PosY = 0;
+    var ImgPos;
+    ImgPos = FindPosition(myImg);
+    if (!e) var e = window.event;
+    if (e.pageX || e.pageY)
+        {
+        PosX = e.pageX;
+        PosY = e.pageY;
+        }
+    else if (e.clientX || e.clientY)
+	{
+        PosX = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+        PosY = e.clientY + document.body.scrollTop  + document.documentElement.scrollTop;
+        }
+    PosX = PosX - ImgPos[0];
+    PosY = PosY - ImgPos[1];
+    document.getElementById("x").innerHTML = PosX;
+    document.getElementById("y").innerHTML = PosY;
+}
+// END IMG COORD. FOO
+//-->
+</script>
+
+<script type="text/JavaScript">
+var url = "pic"; //url to load image from
+var refreshInterval = 1000; //in ms
+var drawDate = true; //draw date string
+var img;
+
+function init() {
+    var canvas = document.getElementById("canvas");
+    var context = canvas.getContext("2d");
+    img = new Image();
+    img.onload = function() {
+        canvas.setAttribute("width", img.width)
+        canvas.setAttribute("height", img.height)
+        context.drawImage(this, 0, 0);
+        if(drawDate) {
+            var now = new Date();
+            var text = now.toLocaleDateString() + " " + now.toLocaleTimeString();
+            var maxWidth = 100;
+            var x = img.width-10-maxWidth;
+            var y = img.height-10;
+            context.strokeStyle = 'black';
+            context.lineWidth = 2;
+            context.strokeText(text, x, y, maxWidth);
+            context.fillStyle = 'white';
+            context.fillText(text, x, y, maxWidth);
+        }
+    };
+    refresh();
+}
+function refresh()
+{
+    img.src = url
+    setTimeout("refresh()",refreshInterval);
+}
+
+</script>
 </head>
 
-  <body>
+  <body onload="JavaScript:init();">
 
     <div class="container">
       <div class="header clearfix">
@@ -70,6 +157,10 @@
         </div>
       </div>
 
+      <div>
+          <canvas id="canvas"/>
+      </div>
+
       <footer class="footer">
         <p>CCCFR</p>
       </footer>
@@ -90,6 +181,18 @@
     });
 </script>
 
+<center>
+	PoC
+	<img src="http://www.chestysoft.com/images/red.gif" width="400" height="300" alt="" id="myImgId" />
+
+<script type="text/javascript">
+<!--
+var myImg = document.getElementById("myImgId");
+myImg.onmousedown = GetCoordinates;
+//-->
+</script>
+<p>X:<span id="x"></span></p>
+<p>Y:<span id="y"></span></p>
+</center>
   </body>
 </html>
-
