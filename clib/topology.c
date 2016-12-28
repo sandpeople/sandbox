@@ -1,5 +1,6 @@
 
 #include <assert.h>
+#include <pthread.h>
 #include <stdlib.h>
 
 #include "images.h"
@@ -7,10 +8,16 @@
 #include "simulation.h"
 #include "topology.h"
 
+pthread_mutex_t *topology_lock = NULL;
 
 double *topology_drift_cache_height = NULL;
 double *topology_drift_cache_value_x = NULL;
 double *topology_drift_cache_value_y = NULL;
+
+__attribute__((constructor)) static void topology_mutex_acquire() {
+    topology_lock = malloc(sizeof(*topology_lock));
+    pthread_mutex_init(topology_lock, NULL);
+}
 
 char *topology_map = NULL;
 double *height_map = NULL;
@@ -18,9 +25,11 @@ int topology_map_x = 0;
 int topology_map_y = 0;
 int require_topology_rebuild = 1;
 void topology_init(int size_x, int size_y) {
+    pthread_mutex_lock(topology_lock);
     if (topology_map) {
         if (size_x == topology_map_x &&
                 size_y == topology_map_y) {
+            pthread_mutex_unlock(topology_lock);
             return;
         }
         free(topology_map);
@@ -38,19 +47,27 @@ void topology_init(int size_x, int size_y) {
     topology_drift_cache_value_x = NULL;
     free(topology_drift_cache_value_y);
     topology_drift_cache_value_y = NULL;
+    pthread_mutex_unlock(topology_lock);
 }
 
 double topology_heightAt(int x, int y) {
+    pthread_mutex_lock(topology_lock);
     if (x < 0 || x >= topology_map_x || y < 0 || y >= topology_map_y) {
+        pthread_mutex_unlock(topology_lock);
         return 0;
     }
-    return height_map[x + y * topology_map_x];
+    double result = height_map[x + y * topology_map_x];
+    pthread_mutex_unlock(topology_lock);
+    return result;
 }
 
 void topology_calculate_drift(int x, int y, double *vx, double *vy) {
+    pthread_mutex_lock(topology_lock);
+
     // Don't allow invalid values:
     if (x < 0 || x >= topology_map_x || y < 0 || y >= topology_map_y) {
         *vx = 0; *vy = 0;
+        pthread_mutex_unlock(topology_lock);
         return;
     }
 
@@ -77,6 +94,7 @@ void topology_calculate_drift(int x, int y, double *vx, double *vy) {
         // we do!
         *vx = topology_drift_cache_value_x[currentindex];
         *vy = topology_drift_cache_value_y[currentindex];
+        pthread_mutex_unlock(topology_lock);
         return;
     }
     topology_drift_cache_height[currentindex] = cache_match_height;
@@ -128,9 +146,11 @@ void topology_calculate_drift(int x, int y, double *vx, double *vy) {
     *vy = vec_y;
     topology_drift_cache_value_x[currentindex] = vec_x;
     topology_drift_cache_value_y[currentindex] = vec_y;
+    pthread_mutex_unlock(topology_lock);
 }
 
 double topology_scan_type(int type, int x, int y, int size) {
+    pthread_mutex_lock(topology_lock);
     int scan_start_x = x - (size / 2.0);
     int scan_start_y = y - (size / 2.0);
     double positive = 0;
@@ -149,17 +169,23 @@ double topology_scan_type(int type, int x, int y, int size) {
             }
         }
     }
+    pthread_mutex_unlock(topology_lock);
     return positive / total;
 }
 
 int get_topology(int x, int y) {
+    pthread_mutex_lock(topology_lock);
     if (x < 0 || x >= topology_map_x || y < 0 || y >= topology_map_y) {
+        pthread_mutex_unlock(topology_lock);
         return TOPOLOGY_NONE;
     }
-    return topology_map[x + y * topology_map_x];
+    int result = topology_map[x + y * topology_map_x];
+    pthread_mutex_unlock(topology_lock);
+    return result;
 }
 
 void topology_drawToSimImage(const uint8_t* depth_array, int xsize, int ysize) {
+    pthread_mutex_lock(topology_lock);
     assert(simulation_isSurfaceLocked());
 
 	// Draw topology gradient:
@@ -226,4 +252,5 @@ void topology_drawToSimImage(const uint8_t* depth_array, int xsize, int ysize) {
             y++;
         }
 	}
+    pthread_mutex_unlock(topology_lock);
 }

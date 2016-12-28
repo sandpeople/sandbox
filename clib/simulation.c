@@ -101,6 +101,9 @@ int simulation_getFluidUpdateCount() {
         count += 1;
         lastFluidUpdate += timestep;
     }
+    if (count == 0) {
+        SDL_Delay(timestep);
+    }
     return count;
 }
 

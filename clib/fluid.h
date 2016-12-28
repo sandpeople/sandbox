@@ -5,6 +5,6 @@
 void fluid_init(int xsize, int ysize);
 void fluid_spawn(int type, int x, int y, double amount);
 void fluid_randomSpawns();
-void fluid_updateAndDrawAll(int xsize, int ysize);
+void fluid_drawAll(int xsize, int ysize);
 
 

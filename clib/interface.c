@@ -39,7 +39,7 @@ void interface_run(
     // Fluid updates:
     simulation_lockSurface();
     assert(simulation_isSurfaceLocked());
-    fluid_updateAndDrawAll(xsize, ysize);
+    fluid_drawAll(xsize, ysize);
 
     //simulation_updateMovingObjects();
     simulation_unlockSurface();

@@ -1,5 +1,6 @@
 
 #include <assert.h>
+#include <pthread.h>
 
 #include "fluid.h"
 #include "images.h"
@@ -11,29 +12,10 @@ static int fluid_map_x = 0;
 static int fluid_map_y = 0;
 double *fluid_map[FLUID_COUNT] = { 0 };
 
-double reduce_factor = 5;
+pthread_mutex_t *fluid_access = NULL;
+pthread_t *fluid_thread = NULL;
 
-void fluid_init(int width, int height) {
-    int new_fluid_map_x = (int)((double)width / reduce_factor);
-    int new_fluid_map_y = (int)((double)height / reduce_factor);
-    if (fluid_map[0]) {
-        if (fluid_map_x == new_fluid_map_x &&
-                fluid_map_y == new_fluid_map_y) {
-            return;
-        }
-        for (int i = 0; i < FLUID_COUNT; i++) {
-            free(fluid_map[i]);
-        }
-    }
-    fluid_map_x = new_fluid_map_x;
-    fluid_map_y = new_fluid_map_y;
-    for (int i = 0; i < FLUID_COUNT; i++) {
-        fluid_map[i] = (double *)malloc(sizeof(double) *
-            fluid_map_x * fluid_map_y);
-        memset(fluid_map[i], 0, sizeof(double) *
-            fluid_map_x * fluid_map_y);
-    }
-}
+double reduce_factor = 5;
 
 void fluid_spawn(int type, int x, int y, double amount) {
     if (x < 0 || x >= fluid_map_x || y < 0 || y > fluid_map_y) return;
@@ -246,11 +228,16 @@ void fluid_randomSpawns() {
     }
 }
 
-void fluid_updateAndDrawAll(int xsize, int ysize) {
-    int fluidUpdates = simulation_getFluidUpdateCount();
+void fluid_updateAll() {
+	int fluidUpdates = simulation_getFluidUpdateCount();
+    if (fluidUpdates <= 0)
+        return;
     int x = 0;
     int y = 0;
+	pthread_mutex_lock(fluid_access);
     for (int j = 0; j < fluidUpdates; j++) {
+        x = 0;
+        y = 0;
         for (int i = 0; i < fluid_map_x * fluid_map_y; ++i) {
             // Update fluid simulation in this spot:
             for (int k = 0; k < FLUID_COUNT; k++) {
@@ -262,11 +249,16 @@ void fluid_updateAndDrawAll(int xsize, int ysize) {
             if (x >= fluid_map_x) {
                 x -= fluid_map_x;
                 y++;
-            }        
+            }
         }
     }
-	x = 0;
-    y = 0; 
+	pthread_mutex_unlock(fluid_access);
+}
+
+void fluid_drawAll(int xsize, int ysize) {
+	int x = 0;
+    int y = 0; 
+	pthread_mutex_lock(fluid_access);
     for (int i = 0; i < xsize * ysize; ++i) {
 		fluid_drawAllIfThere(x, y, xsize);
 
@@ -277,8 +269,45 @@ void fluid_updateAndDrawAll(int xsize, int ysize) {
             y++;
         }
     }
+	pthread_mutex_unlock(fluid_access);
 }
 
+static void *fluid_simulationThread(void *userdata) {
+    while (1) {
+	    fluid_updateAll();
+    }
+    return NULL;
+}
 
-
+void fluid_init(int width, int height) {
+    int new_fluid_map_x = (int)((double)width / reduce_factor);
+    int new_fluid_map_y = (int)((double)height / reduce_factor);
+    if (fluid_map[0]) {
+        if (fluid_map_x == new_fluid_map_x &&
+                fluid_map_y == new_fluid_map_y) {
+            return;
+        }
+        for (int i = 0; i < FLUID_COUNT; i++) {
+            free(fluid_map[i]);
+        }
+    }
+    if (!fluid_access) {
+        fluid_access = malloc(sizeof(*fluid_access));
+        pthread_mutex_init(fluid_access, NULL);
+    }
+    pthread_mutex_lock(fluid_access);
+    fluid_map_x = new_fluid_map_x;
+    fluid_map_y = new_fluid_map_y;
+    for (int i = 0; i < FLUID_COUNT; i++) {
+        fluid_map[i] = (double *)malloc(sizeof(double) *
+            fluid_map_x * fluid_map_y);
+        memset(fluid_map[i], 0, sizeof(double) *
+            fluid_map_x * fluid_map_y);
+    }
+    pthread_mutex_unlock(fluid_access);
+    if (!fluid_thread) {
+        fluid_thread = malloc(sizeof(*fluid_thread));
+        pthread_create(fluid_thread, NULL, fluid_simulationThread, NULL);
+    } 
+}
 
