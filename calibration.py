@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import ConfigParser as configparser
 import cv2
 import cv2 as cv
 from freenect import sync_get_depth
@@ -7,9 +8,29 @@ import frame_convert
 import numpy as np
 from skimage import exposure
 import pickle
+import sys
 
-screen_resolution_x = 1280
-screen_resolution_y = 1024 
+# Various options:
+parser = configparser.ConfigParser()
+parser.read("config.ini")
+try:
+    height_shift = float(parser.get("main", "height_shift"))
+except configparser.NoOptionError:
+    height_shift = 0
+height_scale = float(parser.get("main", "height_scale"))
+offset=3.5
+screen_resolution_x = int(parser.get("main", "screen_resolution_x"))
+screen_resolution_y = int(parser.get("main", "screen_resolution_y"))
+
+# Compute proper fullscreen constants for openCV version:
+fullscreen_const = None
+winnormal_const = None
+try:
+    fullscreen_const = cv2.cv.CV_WINDOW_FULLSCREEN
+    winnormal_const = cv2.cv.CV_WINDOW_NORMAL
+except AttributeError:
+    fullscreen_const = cv2.WINDOW_FULLSCREEN
+    winnormal_const = cv2.WINDOW_NORMAL
 
 # initialize the list of reference points and boolean indicating
 # whether cropping is being performed or not
@@ -73,20 +94,23 @@ def contractions(img, points):
     print dst
     done_image=dst
 
+test_img = cv2.imread('images/kinect.png', 0)
+no_kinect = False
 def get_depth():
     return frame_convert.pretty_depth(sync_get_depth()[0])
 
 def get_image():
-    image = get_depth()
-    N = 4
-    arr = np.array(image,dtype=np.float) / N
-    for i in range(1,N):
-        image=get_depth() # - img_avgi
-        imarr=np.array(image,dtype=np.float)
-        arr=arr+imarr/N
-    # Round values in array and cast as 8-bit integer
-    arr=np.array(np.round(arr),dtype=np.uint8)
-    img=exposure.rescale_intensity(arr, in_range=(160,190))
+    global no_kinect
+    # Take kinect image if we have one:
+    if not no_kinect:
+        try:
+            img = get_depth()
+        except TypeError:
+            no_kinect = True
+            return get_image()
+    else:
+        # Apparently, no kinect around. take static test image instead:
+        img = cv2.imread('images/kinect.png', 0)
     return img
 
 done=False
@@ -125,9 +149,9 @@ def click_and_crop(event, x, y, flags, param):
         cv2.imshow("image", get_image()) 
 
 image=get_image()
-cv2.namedWindow("image", cv2.WINDOW_NORMAL)
+cv2.namedWindow("image", winnormal_const)
 cv2.setWindowProperty("image", cv2.WND_PROP_FULLSCREEN,
-    cv2.WINDOW_FULLSCREEN)
+    fullscreen_const)
 cv2.setMouseCallback("image", click_and_crop)
  
 # keep looping until the 'q' key is pressed
@@ -148,13 +172,23 @@ while True:
     cv2.putText(image, "3", offsetstrup[2], fontFace, fontScale,(offset,offset), thickness, 8);
     cv2.circle(image,offsetstrup[3], 5, (230), -1)
     cv2.putText(image, "4", offsetstrup[3], fontFace, fontScale,(offset,offset), thickness, 8);
-    resized = cv2.resize(image, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
-    cv2.imshow("image", resized)
+    image2 = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+    image_float = np.ndarray.astype(image2, dtype=np.float32)
+    image_float = (255.0 - ((255.0 - image_float) * height_scale + height_shift))
+    resized = cv2.resize(image_float, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
+    resized = resized.clip(min=0.0, max=255.0)
+    image_result = np.ndarray.astype(resized, dtype=np.uint8)
+    cv2.imshow("image", image_result)
     key = cv2.waitKey(1) & 0xFF   
  
-    # if the 'c' key is pressed, break from the loop
-    if key == ord("c"):
-        break
+    # if the 'c' or escape key is pressed, break from the loop
+    if key == ord("c") or key == 27:
+        cv2.destroyAllWindows()
+        sys.exit(0)
+    elif key == 255:
+        continue
+    else:
+        print("UNKNOWN KEY: " + str(key))
 
 if len(points) == 4:
     pickle.dump(points, open( savefile, "wb" ))

@@ -11,9 +11,6 @@
 #include "simulation.h"
 #include "topology.h"
 
-#define ANGLES 16
-#define ANGLE_STEP (360.0 / ANGLES)
-
 struct particle_type {
     SDL_Texture *image;
     float base_scale;
@@ -108,6 +105,7 @@ void particle_render(int type) {
     SDL_Rect dest = {0};
     while (inst) {
         SDL_Texture *i = ptypes[type].image;
+        assert(i != NULL);
         uint32_t format;
         int access;
         int w,h;
@@ -125,8 +123,10 @@ void particle_render(int type) {
                 continue;
             }
         }
-        dest.x -= w / 2;
-        dest.y -= h / 2;
+        dest.x -= w / 2 - 64;
+        dest.y -= h / 2 - 64;
+        dest.w = 0;
+        dest.h = 0;
         SDL_RenderCopyEx(simulation_getRenderer(),
             i, NULL, &dest,
             inst->angle, NULL, SDL_FLIP_NONE);
@@ -185,6 +185,7 @@ void particle_updateAll(void) {
 }
 
 void particle_renderAll(int from_type, int to_type) {
+    SDL_SetRenderTarget(simulation_getRenderer(), images_simulation_3d_image);
     if (to_type <= from_type) return;
     for (int i = from_type; i < to_type; i++) {
         particle_render(i);

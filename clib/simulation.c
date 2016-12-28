@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#include <GL/glew.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
@@ -29,11 +30,16 @@ void simulation_initialize(int width, int height) {
 
     SDL_Init(SDL_INIT_VIDEO);
 
-    hiddenWindow = SDL_CreateWindow("A SDL2 window",
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 0);
+
+    hiddenWindow = SDL_CreateWindow(
+        "IGNORE THIS, SUPPOSEDLY HIDDEN TEMPORARY RENDER TARGET",
         SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
-        width, height,
-        SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
+        (int)(width * 1.2), (int)(height * 1.2),
+        SDL_WINDOW_OPENGL);
     if (!hiddenWindow) {
         fprintf(stderr, "[simulation.c] FAILED TO INITIALIZE WINDOW");
         exit(1);
@@ -60,15 +66,17 @@ void simulation_initialize(int width, int height) {
 }
 
 void simulation_lockSurface() {
-    if (!simulation_surface_locked) {
-        if (SDL_LockSurface(images_simulation_image) != 0) {
-            printf("ERROR FAILED TO LOCK SIMULATION IMAGE\n");
-            exit(1);
-        }
-        simulation_surface_locked = 1;
+    assert(!simulation_surface_locked);
+    if (SDL_LockSurface(images_simulation_image) != 0) {
+        printf("ERROR FAILED TO LOCK SIMULATION IMAGE\n");
+        exit(1);
     }
+    simulation_surface_locked = 1;
 }
 
+int simulation_isSurfaceLocked() {
+    return simulation_surface_locked;
+}
 
 static int64_t lastMovingObjectsUpdate = -1;
 void simulation_updateMovingObjects() {
@@ -93,25 +101,24 @@ int simulation_getFluidUpdateCount() {
         count += 1;
         lastFluidUpdate += timestep;
     }
+    if (count == 0) {
+        SDL_Delay(timestep);
+    }
     return count;
 }
 
 void simulation_drawBeforeWater() {
-    //simulation_unlockSurface();
+    assert(!simulation_isSurfaceLocked());
 
-    // clear simulation image:
-    SDL_FillRect(images_simulation_image, NULL, 0x000000);   
-
-    // draw particles below fluid simulations:
+    // Draw particles below fluid simulations:
     images_simulation_2d_to_3d_upload();
+    assert(!simulation_isSurfaceLocked());
     particle_renderAll(0, PARTICLE_BELOW_WATER);
     images_simulation_3d_to_2d_download();
 }
 
 void simulation_drawAfterWater() {
-    //simulation_unlockSurface();
-
-    // draw particles on top of fluid simulations:
+    // Draw particles on top of fluid simulations:
     images_simulation_2d_to_3d_upload();
     particle_renderAll(PARTICLE_BELOW_WATER, PARTICLE_TYPE_COUNT);
     images_simulation_3d_to_2d_download();
@@ -133,60 +140,55 @@ void simulation_finalRenderToArray(uint8_t *render_data,
             int i1 = 3 * (x + y * width);
             int i2 = 4 * x + y * pitch;
 
-            uint8_t a = pix[i2 + 0];
-            double alpha = ((double)a)/(255.0);
-            double new_c;
-
-            new_c = ((double)((uint8_t)render_data[i1 + 0]) *
-                (1.0 - alpha)) +
-                ((double)((uint8_t)pix[i2 + 1])) * alpha;
-            render_data[i1 + 0] = new_c;
-
-            new_c = ((double)((uint8_t)render_data[i1 + 1]) *
-                (1.0 - alpha)) +
-                ((double)((uint8_t)pix[i2 + 2])) * alpha;
-            render_data[i1 + 1] = (unsigned char) new_c;
-
-            new_c = ((double)((uint8_t)render_data[i1 + 2]) *
-                (1.0 - alpha)) +
-                ((double)((uint8_t)pix[i2 + 3])) * alpha;
-            render_data[i1 + 2] = (unsigned char) new_c;
+            render_data[i1 + 0] = pix[i2 + 1];
+            render_data[i1 + 1] = pix[i2 + 2];
+            render_data[i1 + 2] = pix[i2 + 3];
         }
     }
 
-    SDL_UnlockSurface(images_simulation_image);
+    simulation_unlockSurface();
 
     simulation_surface_locked = 0;
 }
 
 void simulation_addPixel(int i, int r, int g, int b, int a) {
-    simulation_lockSurface();
-    char *pix = (char*)images_simulation_image->pixels;
+    if (i < 0 || 4 * i + 3 >= images_simulation_image->w *
+            images_simulation_image->h * 4) {
+        return;
+    }
+    assert(simulation_isSurfaceLocked());
+
+    unsigned char *pix = (unsigned char*)images_simulation_image->pixels;
     r = (int)(((float)r) * ((float)a / 255.0));
     g = (int)(((float)g) * ((float)a / 255.0));
     b = (int)(((float)b) * ((float)a / 255.0));
 
+    double fa = ((double)a) / 255.0;
+
     int new_a = pix[4*i + 0] + a;
+    if (new_a < 0) {new_a = 0;}
     if (new_a > 255) {new_a = 255;}
     pix[4*i + 0] = new_a;
 
-    int new_r = pix[4*i + 1] + r;
+    int new_r = ((double)pix[4*i + 1]) * (1.0 - fa)  + r * fa;
+    if (new_r < 0) {new_r = 0;}
     if (new_r > 255) {new_r = 255;}
     pix[4*i + 1] = new_r;
 
-    int new_g = pix[4*i + 2] + g;
+    int new_g = ((double)pix[4*i + 2]) * (1.0 - fa) + g * fa;
+    if (new_g < 0) {new_g = 0;}
     if (new_g > 255) {new_g = 255;}
-    pix[4*i + 2] = new_g; 
+    pix[4*i + 2] = new_g;
 
-    int new_b = pix[4*i + 3] + b;
+    int new_b = ((double)pix[4*i + 3]) * (1.0 - fa) + b * fa;
+    if (new_b < 0) {new_b = 0;}
     if (new_b > 255) {new_b = 255;}
     pix[4*i + 3] = new_b;
 }
 
 void simulation_unlockSurface() {
-    if (simulation_surface_locked) {
-        SDL_UnlockSurface(images_simulation_image);
-        simulation_surface_locked = 0;
-    }
+    assert(simulation_surface_locked == 1);
+    SDL_UnlockSurface(images_simulation_image);
+    simulation_surface_locked = 0;
 }
 

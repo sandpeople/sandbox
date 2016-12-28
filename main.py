@@ -1,30 +1,47 @@
 #!/usr/bin/python
 from freenect import sync_get_depth
+import ConfigParser as configparser
 import cv2 
 import numpy as np
 import frame_convert
 import sys
 import clib_interface
 import server
+import os
 import pickle
 import threading
 from Queue import Queue
+if not os.path.exists("cal.p"):
+    os.system("cp cal.p.default cal.p")
+if not os.path.exists("config.ini"):
+    os.system("cp config.ini.default config.ini")
 points=pickle.load(open( "cal.p", "rb" ))
 print points
 
-
 enable_http=True
 
-webapi_queue=Queue()
+pqueue=Queue(maxsize=1)
+
 if enable_http:
-    server=server.sandcontrol()
-    serverd=threading.Thread(target = server.launch_control)
+    server=server.sandcontrol(queue=pqueue)
+    serverd=threading.Thread(target = server.launch_control, args=(pqueue,))
     serverd.daemon = True
     serverd.start()
 
-height=80
+# Various options:
+parser = configparser.ConfigParser()
+parser.read("config.ini")
+try:
+    height_shift = float(parser.get("main", "height_shift"))
+except configparser.NoOptionError:
+    height_shift = 0
+height_scale = float(parser.get("main", "height_scale"))
 offset=3.5
+screen_resolution_x = int(parser.get("main", "screen_resolution_x"))
+screen_resolution_y = int(parser.get("main", "screen_resolution_y"))
+clib_interface.set_height_config(height_shift, height_scale)
 
+# Compute proper fullscreen constants for openCV version:
 fullscreen_const = None
 winnormal_const = None
 try:
@@ -34,14 +51,43 @@ except AttributeError:
     fullscreen_const = cv2.WINDOW_FULLSCREEN
     winnormal_const = cv2.WINDOW_NORMAL
 
-screen_resolution_x = 800
-screen_resolution_y = 600
+# Handle mouse events:
+calibration = False
+mouse_dragging = False
+mouse_drag_start = None
+mouse_drag_reported = None
+def mouse_handling(event, x, y, flags, param):
+    global mouse_drag_reported
+    global mouse_drag_start
+    global mouse_dragging
+    global calibration
+    if event == cv2.EVENT_LBUTTONDOWN:
+        mouse_dragging = True
+        mouse_drag_start = (x, y)
+        mouse_drag_reported = (0, 0)
+    elif (event == cv2.EVENT_MOUSEMOVE or \
+            event == cv2.EVENT_LBUTTONUP) and mouse_dragging:
+        if event == cv2.EVENT_LBUTTONUP:
+            mouse_dragging = False
+        mouse_drag_vector = (x - mouse_drag_start[0],
+            y - mouse_drag_start[1])
+        mouse_drag_report_diff = (
+            mouse_drag_vector[0] - mouse_drag_reported[0],
+            mouse_drag_vector[1] - mouse_drag_reported[1]);
+        mouse_drag_reported = mouse_drag_vector
+        if mouse_drag_report_diff[0] != 0 or \
+                mouse_drag_report_diff[1] != 0:
+            if calibration:
+                clib_interface.drag_map(
+                    -float(mouse_drag_report_diff[0] * 0.05),
+                    -float(mouse_drag_report_diff[1] * 0.05))
 
 run=True
 gradient=cv2.imread('gradient.bmp',1)
-cv2.namedWindow('Depth', cv2.WINDOW_NORMAL)
-cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN,
+cv2.namedWindow('Beamer Image', cv2.WINDOW_NORMAL)
+cv2.setWindowProperty('Beamer Image', cv2.WND_PROP_FULLSCREEN,
     fullscreen_const)
+cv2.setMouseCallback('Beamer Image', mouse_handling)
 fullscreen = True
 
 def contractions(img, points):
@@ -76,15 +122,15 @@ except TypeError:
 
 def get_image():
     global no_kinect
-    # take kinect image if we have one:
+    # Take kinect image if we have one:
     if not no_kinect:
         img = get_depth()
     else:
-        # apparently, no kinect around. take static test image instead:
-        img = cv2.imread('images/kinect.png',0)
+        # Apparently, no kinect around. take static test image instead:
+        img = cv2.imread('images/kinect.png', 0)
     return img
 
-# create cimg buffer in according format:
+# Create cimg buffer in according format:
 img = get_image()
 cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
@@ -94,12 +140,17 @@ while run is True:
 
     # Call C code for simulation:
     #contractions(img, points)
-    clib_interface.sim(img, cimg)
+    clib_interface.simulate(img, cimg)
     contractions(cimg, points)
 
     # Show resulting image:
     resized = cv2.resize(cimg, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
-    cv2.imshow('Depth', resized)
+    if not pqueue.full():
+        try:
+            pqueue.put(resized, block=False)
+        except:
+            pass
+    cv2.imshow('Beamer Image', resized)
    
     key = cv2.waitKey(10)
 
@@ -111,15 +162,24 @@ while run is True:
         if fullscreen:
             fullscreen = False
             cv2.destroyAllWindows()
-            cv2.namedWindow('Depth', cv2.WINDOW_AUTOSIZE)
-            cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN,
+            cv2.namedWindow('Beamer Image', cv2.WINDOW_AUTOSIZE)
+            cv2.setWindowProperty("Beamer Image", cv2.WND_PROP_FULLSCREEN,
                 fullscreen_const)
+            cv2.setMouseCallback('Beamer Image', mouse_handling)
         else:
             fullscreen = True
             cv2.destroyAllWindows()
-            cv2.namedWindow('Depth', winnormal_const)
-            cv2.setWindowProperty("Depth", cv2.WND_PROP_FULLSCREEN,
+            cv2.namedWindow('Beamer Image', winnormal_const)
+            cv2.setWindowProperty("Beamer Image", cv2.WND_PROP_FULLSCREEN,
                 fullscreen_const)
+            cv2.setMouseCallback('Beamer Image', mouse_handling)
+    elif key == 99:
+        if not calibration:
+            calibration = True
+            print("CALIBRATION <<ON>>")
+        else:
+            calibration = False
+            print("CALIBRATION <<OFF>>")
     elif key >= 0:
         print("UNKNOWN KEY: " + str(key))
     
