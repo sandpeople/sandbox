@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import ConfigParser as configparser
 import cv2
 import cv2 as cv
 from freenect import sync_get_depth
@@ -8,8 +9,24 @@ import numpy as np
 from skimage import exposure
 import pickle
 
-screen_resolution_x = 1280
-screen_resolution_y = 1024 
+# Various options:
+parser = configparser.ConfigParser()
+parser.read("config.ini")
+height_shift = float(parser.get("main", "height_shift"))
+height_scale = float(parser.get("main", "height_scale"))
+offset=3.5
+screen_resolution_x = int(parser.get("main", "screen_resolution_x"))
+screen_resolution_y = int(parser.get("main", "screen_resolution_y"))
+
+# Compute proper fullscreen constants for openCV version:
+fullscreen_const = None
+winnormal_const = None
+try:
+    fullscreen_const = cv2.cv.CV_WINDOW_FULLSCREEN
+    winnormal_const = cv2.cv.CV_WINDOW_NORMAL
+except AttributeError:
+    fullscreen_const = cv2.WINDOW_FULLSCREEN
+    winnormal_const = cv2.WINDOW_NORMAL
 
 # initialize the list of reference points and boolean indicating
 # whether cropping is being performed or not
@@ -125,9 +142,9 @@ def click_and_crop(event, x, y, flags, param):
         cv2.imshow("image", get_image()) 
 
 image=get_image()
-cv2.namedWindow("image", cv2.WINDOW_NORMAL)
+cv2.namedWindow("image", winnormal_const)
 cv2.setWindowProperty("image", cv2.WND_PROP_FULLSCREEN,
-    cv2.WINDOW_FULLSCREEN)
+    fullscreen_const)
 cv2.setMouseCallback("image", click_and_crop)
  
 # keep looping until the 'q' key is pressed
