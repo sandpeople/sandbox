@@ -97,27 +97,20 @@ def contractions(img, points):
 test_img = cv2.imread('images/kinect.png', 0)
 no_kinect = False
 def get_depth():
-    global no_kinect
-    if no_kinect:
-        return test_img
-    get_depth_result = sync_get_depth()
-    if get_depth_result == None or \
-            get_depth_result[0] == None:
-        no_kinect = True
-        return test_img
-    return frame_convert.pretty_depth(get_depth_result[0])
+    return frame_convert.pretty_depth(sync_get_depth()[0])
 
 def get_image():
-    image = get_depth()
-    N = 4
-    arr = np.array(image,dtype=np.float) / N
-    for i in range(1,N):
-        image=get_depth() # - img_avgi
-        imarr=np.array(image,dtype=np.float)
-        arr=arr+imarr/N
-    # Round values in array and cast as 8-bit integer
-    arr=np.array(np.round(arr),dtype=np.uint8)
-    img=exposure.rescale_intensity(arr, in_range=(160,190))
+    global no_kinect
+    # Take kinect image if we have one:
+    if not no_kinect:
+        try:
+            img = get_depth()
+        except TypeError:
+            no_kinect = True
+            return get_image()
+    else:
+        # Apparently, no kinect around. take static test image instead:
+        img = cv2.imread('images/kinect.png', 0)
     return img
 
 done=False
