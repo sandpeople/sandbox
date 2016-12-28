@@ -220,6 +220,8 @@ void topology_drawToSimImage(const uint8_t* depth_array, int xsize, int ysize) {
 
         // Set height:
         int height = ((double)(255 - depth_array[depth_offset]) * config_heightScale + config_heightShift);
+        if (height < 0) height = 0;
+        if (height > 255) height = 255;
         height_map[x + y * xsize] = height;
 
         // Calculate gradient offset:
