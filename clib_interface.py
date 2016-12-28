@@ -1,8 +1,11 @@
 
 import ctypes
 
-def sim(input_depth_image, output_color_image):
-    lib = ctypes.cdll.LoadLibrary('./libclib.so')
+lib = None
+def simulate(input_depth_image, output_color_image):
+    global lib
+    if lib == None:
+        lib = ctypes.cdll.LoadLibrary('./libclib.so')
     interface_run = lib.interface_run
     
     # call simulation:
@@ -11,6 +14,13 @@ def sim(input_depth_image, output_color_image):
         ctypes.c_int(input_depth_image.shape[1]),
         ctypes.c_void_p(output_color_image.ctypes.data))
 
+def drag_map(x, y):
+    global lib
+    if lib == None:
+        lib = ctypes.cdll.LoadLibrary('./libclib.so')
+    interface_mapOffset = lib.interface_mapOffset
+    interface_mapOffset.argtypes = [ctypes.c_double, ctypes.c_double]
+    interface_mapOffset(x, y)
 
 def add_car(pos_x, pos_y):
     pass

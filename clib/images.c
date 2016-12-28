@@ -16,6 +16,14 @@ SDL_Texture *images_simulation_3d_image = NULL;
 static int simulation_screen_width = 0;
 static int simulation_screen_height = 0;
 
+double renderOffsetX = 0;
+double renderOffsetY = 0;
+
+void images_addSimulationImageRenderOffset(double x, double y) {
+    renderOffsetX += x;
+    renderOffsetY += y;
+}
+
 void images_init_simulation_image(int screen_width, int screen_height) {
     if (images_simulation_image) {
         if (screen_width == simulation_screen_width &&
@@ -73,7 +81,7 @@ void images_simulation_2d_to_3d_upload() {
     }
 
     // Copy pixels:
-    SDL_LockSurface(images_simulation_image);
+    simulation_lockSurface();
     int _imgh = images_simulation_image->h;
     int _imgw = images_simulation_image->w;
     if (pitch != 0) {
@@ -92,6 +100,7 @@ void images_simulation_2d_to_3d_upload() {
         memcpy(pixels, images_simulation_image->pixels, _imgw * _imgh * 4);
     }
     SDL_UnlockTexture(upload_image);
+    simulation_unlockSurface();
 
     // Render upload_image to images_simulation_3d_image:
     SDL_SetRenderTarget(simulation_getRenderer(),
@@ -119,12 +128,12 @@ void images_simulation_3d_to_2d_download() {
         NULL, &dst);
     SDL_RenderPresent(simulation_getRenderer());
 
-    SDL_LockSurface(images_simulation_image);
+    simulation_lockSurface();
     int result = SDL_RenderReadPixels(simulation_getRenderer(),
         &dst, format,
         images_simulation_image->pixels,
         images_simulation_image->pitch); 
-    SDL_UnlockSurface(images_simulation_image);
+    simulation_unlockSurface();
     if (result != 0) {
         fprintf(stderr, "SDL error in SDL_RenderReadPixels: %s\n",
             SDL_GetError());
@@ -173,6 +182,36 @@ void images_simulation_3d_to_2d_blit_ontop() {
     SDL_SetRenderTarget(simulation_getRenderer(), oldTarget);
     SDL_BlitSurface(_blitOnTopTempImage, NULL, images_simulation_image,
         NULL);
+}
+
+static SDL_Surface *renderTempSurface = NULL;
+void image_applyRenderOffset() {
+    if (!renderTempSurface) {
+        renderTempSurface = SDL_CreateRGBSurfaceWithFormat(
+            0, simulation_screen_width,
+            simulation_screen_height, 0, format);
+    }
+
+    assert(!simulation_isSurfaceLocked());
+
+    SDL_Rect rect;
+    memset(&rect, 0, sizeof(rect));
+    rect.x = -((int)(renderOffsetX + 0.5));
+    rect.y = -((int)(renderOffsetY + 0.5));
+
+    if (SDL_BlitSurface(images_simulation_image,
+            NULL, renderTempSurface, &rect) != 0) {
+        fprintf(stderr, "SDL error in SDL_BlitSurface: %s\n",
+            SDL_GetError());
+        return;
+    }
+    SDL_FillRect(images_simulation_image, NULL, 0x000000);
+    if (SDL_BlitSurface(renderTempSurface,
+            NULL, images_simulation_image, NULL) != 0) {
+        fprintf(stderr, "SDL error in SDL_BlitSurface: %s\n",
+            SDL_GetError());
+        return;
+    }
 }
 
 SDL_Surface *image_load_converted(const char *path, int alpha) {
@@ -283,14 +322,14 @@ void images_init() {
 
     IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
 
-    // load gradient image:
+    // Load gradient image:
     raw_gradient_data = image_load_raw("images/gradient.png", 0, &gradient_x,
         &gradient_y);
     if (!raw_gradient_data) goto images_init_error;
 
     grass = image_load_converted("images/grass.png", 1);
 
-    // load particle images:
+    // Load particle images:
     if (!particle_loadImage(PARTICLE_GRASS, "images/grass.png")) {
         goto images_init_error;
     }

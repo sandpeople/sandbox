@@ -108,8 +108,11 @@ int simulation_getFluidUpdateCount() {
 }
 
 void simulation_drawBeforeWater() {
+    assert(!simulation_isSurfaceLocked());
+
     // Draw particles below fluid simulations:
     images_simulation_2d_to_3d_upload();
+    assert(!simulation_isSurfaceLocked());
     particle_renderAll(0, PARTICLE_BELOW_WATER);
     images_simulation_3d_to_2d_download();
 }
@@ -143,7 +146,7 @@ void simulation_finalRenderToArray(uint8_t *render_data,
         }
     }
 
-    SDL_UnlockSurface(images_simulation_image);
+    simulation_unlockSurface();
 
     simulation_surface_locked = 0;
 }
