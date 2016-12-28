@@ -42,4 +42,5 @@ def start():
         "tools.staticdir.dir" : staticdir,
         "tools.staticdir.on" : True
         })
+    cherrypy.server.socket_host = 0.0.0.0
     cherrypy.quickstart(sandcontrol())
