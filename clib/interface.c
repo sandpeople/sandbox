@@ -67,6 +67,10 @@ void interface_run(
     }
 }
 
+void interface_setHeightConfig(double heightShift, double heightScale) {
+    topology_setHeightConfig(heightShift, heightScale);
+}
+
 void interface_mapOffset(double x, double y) {
     images_addSimulationImageRenderOffset(y, x); 
 }

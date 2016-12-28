@@ -1,14 +1,20 @@
 #!/usr/bin/python
 from freenect import sync_get_depth
+import ConfigParser as configparser
 import cv2 
 import numpy as np
 import frame_convert
 import sys
 import clib_interface
 import server
+import os
 import pickle
 import threading
 from Queue import Queue
+if not os.path.exists("cal.p"):
+    os.system("cp cal.p.default cal.p")
+if not os.path.exists("config.ini"):
+    os.system("cp config.ini.default config.ini")
 points=pickle.load(open( "cal.p", "rb" ))
 print points
 
@@ -23,11 +29,14 @@ if enable_http:
     serverd.start()
 
 # Various options:
-height=80
+parser = configparser.ConfigParser()
+parser.read("config.ini")
+height_shift = float(parser.get("main", "height_shift"))
+height_scale = float(parser.get("main", "height_scale"))
 offset=3.5
-screen_resolution_x = 800
-screen_resolution_y = 600
-
+screen_resolution_x = int(parser.get("main", "screen_resolution_x"))
+screen_resolution_y = int(parser.get("main", "screen_resolution_y"))
+clib_interface.set_height_config(height_shift, height_scale)
 
 # Compute proper fullscreen constants for openCV version:
 fullscreen_const = None

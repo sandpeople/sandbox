@@ -10,6 +10,15 @@
 
 pthread_mutex_t *topology_lock = NULL;
 
+double config_heightShift = 0;
+double config_heightScale = 1.0;
+void topology_setHeightConfig(double heightShift, double heightScale) {
+    pthread_mutex_lock(topology_lock);
+    config_heightShift = heightShift;
+    config_heightScale = heightScale;
+    pthread_mutex_unlock(topology_lock);
+}
+
 double *topology_drift_cache_height = NULL;
 double *topology_drift_cache_value_x = NULL;
 double *topology_drift_cache_value_y = NULL;
@@ -50,13 +59,18 @@ void topology_init(int size_x, int size_y) {
     pthread_mutex_unlock(topology_lock);
 }
 
-double topology_heightAt(int x, int y) {
-    pthread_mutex_lock(topology_lock);
+static double _heightAt(int x, int y) {
     if (x < 0 || x >= topology_map_x || y < 0 || y >= topology_map_y) {
         pthread_mutex_unlock(topology_lock);
         return 0;
     }
     double result = height_map[x + y * topology_map_x];
+    return result;
+}
+
+double topology_heightAt(int x, int y) {
+    pthread_mutex_lock(topology_lock);
+    double result = _heightAt(x, y);
     pthread_mutex_unlock(topology_lock);
     return result;
 }
@@ -86,7 +100,7 @@ void topology_calculate_drift(int x, int y, double *vx, double *vy) {
 
     // Prepare stuff for cache access:
     int currentindex = x + y * topology_map_x;
-    double cache_match_height = 1000.0f + height_map[currentindex];
+    double cache_match_height = 1000.0f + _heightAt(x, y);
 
     // See if we have a cached value:
     if (fabs(topology_drift_cache_height[currentindex] - cache_match_height) <
@@ -105,13 +119,13 @@ void topology_calculate_drift(int x, int y, double *vx, double *vy) {
     int scan_start_y = y + 0.5 - (radius / 2.0);
     double vec_x = 0;
     double vec_y = 0;
-    double center_height = height_map[x + y * topology_map_x]; 
+    double center_height = _heightAt(x, y);
     for (int px = scan_start_x; px < scan_start_x + radius; px++) {
         if (px < 0 || px >= topology_map_x) continue;
         for (int py = scan_start_y; py < scan_start_y + radius; py++) {
             if (py < 0 || py >= topology_map_y) continue;
             double height_diff = center_height -
-                height_map[px + py * topology_map_x];
+                _heightAt(px, py);
             double height_diff_fac = height_diff / 10.0;
             if (height_diff_fac > 1.0) {
                 height_diff_fac = 1.0;

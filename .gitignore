@@ -6,3 +6,5 @@ clib_test/test
 *.swp
 *.swo
 *~
+cal.p
+config.ini

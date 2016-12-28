@@ -14,6 +14,14 @@ def simulate(input_depth_image, output_color_image):
         ctypes.c_int(input_depth_image.shape[1]),
         ctypes.c_void_p(output_color_image.ctypes.data))
 
+def set_height_config(height_shift, height_scale):
+    global lib
+    if lib == None:
+        lib = ctypes.cdll.LoadLibrary('./libclib.so')
+    set_height_config = lib.interface_setHeightConfig
+    set_height_config.argtypes = [ctypes.c_double, ctypes.c_double]
+    set_height_config(height_shift, height_scale)
+
 def drag_map(x, y):
     global lib
     if lib == None:
