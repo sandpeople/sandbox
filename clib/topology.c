@@ -40,6 +40,13 @@ void topology_init(int size_x, int size_y) {
     topology_drift_cache_value_y = NULL;
 }
 
+double topology_heightAt(int x, int y) {
+    if (x < 0 || x >= topology_map_x || y < 0 || y >= topology_map_y) {
+        return 0;
+    }
+    return height_map[x + y * topology_map_x];
+}
+
 void topology_calculate_drift(int x, int y, double *vx, double *vy) {
     // Don't allow invalid values:
     if (x < 0 || x >= topology_map_x || y < 0 || y >= topology_map_y) {
