@@ -181,6 +181,7 @@ while True:
     cv2.putText(image, "4", offsetstrup[3], fontFace, fontScale,(offset,offset), thickness, 8);
     image_float = np.ndarray.astype(image, dtype=np.float64)
     image_float = (255.0 - ((255.0 - image_float) * height_scale + height_shift))
+    image_float *= 0.5
     image_float = image_float.clip(min=0.0, max=255.0)
     image = np.ndarray.astype(image_float, dtype=np.uint8)
     resized = cv2.resize(image, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
