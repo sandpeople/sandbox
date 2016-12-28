@@ -25,7 +25,27 @@ var refreshInterval = 1000; //in ms
 var drawDate = true; //draw date string
 var img;
 
+function getOffset(dom,event) {
+	x = event.offsetX / dom.width();
+        y = event.offsetY / dom.height();	
+
+	return {"x":x,"y":y};
+}
+
 function init() {
+    var wrapper = $("#main")
+    var img = wrapper.find(".background");
+    var item = $('select[name="item"]');
+
+    img.on("click",function(event){
+        pos=getOffset(img,event);
+	data = {
+		'pos': pos,
+		'item': item.val()
+	}
+        $.post('/api/change', data);
+    });
+/*
     var canvas = document.getElementById("canvas");
     var context = canvas.getContext("2d");
     img = new Image();
@@ -45,13 +65,16 @@ function init() {
             context.fillStyle = 'white';
             context.fillText(text, x, y, maxWidth);
         }
-    };
+    };*/
     refresh();
 }
 function refresh()
 {
+    img.src = url + "?time=" + (new Date()).getTime();
+/*
     img.src = url
     setTimeout("refresh()",refreshInterval);
+
 }
 
 </script>
@@ -59,6 +82,9 @@ function refresh()
 
   <body onload="JavaScript:init();">
 
+    <div id="main">
+         <img class="background" />
+    </div>
     <div class="container">
       <div class="header clearfix">
         <!-- <nav>
@@ -80,6 +106,9 @@ function refresh()
       <div class="row marketing">
         <div class="col-lg-6">
           <h4>Cars</h4>
+          <select name="item">
+                <option value="1">red car</option>
+          </select>
           <p><button class="btn btn-lg btn-success" role=button id='car-spawn'>Spawn Car</button></p>
 
           <h4>Colours</h4>
