@@ -7,11 +7,17 @@ Written using libfreenect, python-opencv, SDL2 and python2 & C.
 
 This project requires a couple of dependencies:
 
-Debian:
-apt-get install libfreenect-dev libsdl2-image-2.0-0 python-freenect libcv-dev libsdl2-dev libsdl2-image-dev python-opencv python-jinja2 python-pip
-(not completely verified) ; pip install -U cherrypy
-apt-get install python-scipy
-pip install scipy
+- libfreenect, python-freenect
+- SDL2
+- SDL2 Image
+- CV 2+, python-opencv
+- jinja2
+- cherrypy
+- scipy
+- GLew
+
+(we might have forgotten some. If we have, please file an issue so we can
+update this list)
 
 ## Build & run
 
@@ -25,6 +31,5 @@ Afterwards, launch the program with:
 ```
 ./main.py
 ```
-(inside the repository)
 
 

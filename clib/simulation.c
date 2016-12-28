@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#include <GL/glew.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
@@ -29,6 +30,8 @@ void simulation_initialize(int width, int height) {
 
     SDL_Init(SDL_INIT_VIDEO);
 
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 0);
 
     hiddenWindow = SDL_CreateWindow(
