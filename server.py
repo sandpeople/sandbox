@@ -5,8 +5,8 @@ import json
 from jinja2 import Environment, FileSystemLoader
 
 class sandcontrol(object):
-    def __init__(self, **task_settings):
-        self.pqueue = task_settings.get('queue', None)
+    def __init__(self, queue):
+        self.pqueue = queue
         self.picture = None
 
     @cherrypy.expose
@@ -21,18 +21,19 @@ class sandcontrol(object):
         return json.dumps({"text" : "button {} ".format(id)})
 
     @cherrypy.expose
-    def pic(self):
-        if not pqueue.empty():
+    @cherrypy.tools.json_out()
+    def pic(self, *args, **kw):
+        if not self.pqueue.empty():
             try:
-                self.picture = pqueue.get(block=False)
+                self.picture = self.pqueue.get(block=False)
             except:
                 pass
         return self.picture
 
-    def launch_control(self):
-        start()
+    def launch_control(self, queue):
+        start(queue)
 
-def start():
+def start(queue):
     global tmpl
     CURDIR = os.getcwd()
     staticdir = CURDIR+"/webroot"
@@ -43,4 +44,4 @@ def start():
         "tools.staticdir.on" : True
         })
     cherrypy.server.socket_host = "0.0.0.0"
-    cherrypy.quickstart(sandcontrol())
+    cherrypy.quickstart(sandcontrol(queue))

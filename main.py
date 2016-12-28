@@ -24,7 +24,7 @@ pqueue=Queue(maxsize=1)
 
 if enable_http:
     server=server.sandcontrol(queue=pqueue)
-    serverd=threading.Thread(target = server.launch_control)
+    serverd=threading.Thread(target = server.launch_control, args=(pqueue,))
     serverd.daemon = True
     serverd.start()
 
