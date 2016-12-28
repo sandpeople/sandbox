@@ -206,7 +206,7 @@ void fluid_update(int type, int x, int y) {
 }
 
 void fluid_randomSpawns() {
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < 20; i++) {
         double x = rand0to1();
         double y = rand0to1();
         int fluid_x = x * fluid_map_x;
