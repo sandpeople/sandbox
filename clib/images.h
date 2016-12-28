@@ -10,6 +10,7 @@ SDL_Surface *image_load_converted(const char *path, int alpha);
 SDL_Surface *images_duplicate(SDL_Surface *old);
 
 extern SDL_Surface *images_simulation_image;
+extern SDL_Texture *images_simulation_3d_image;
 
 /// Clears the GPU accelerated render target
 void images_simulation_3d_clear();
@@ -25,4 +26,10 @@ void images_simulation_2d_to_3d_upload();
 /// Download GPU accelerated render target, but don't replace the
 /// current 2D render image but instead blit on top with alpha
 void images_simulation_3d_to_2d_blit_ontop();
+
+/// Add render offset to simulation image (for coarse calibration correction):
+void images_addSimulationImageRenderOffset(double x, double y);
+
+/// Apply current render offset to simulation image contents:
+void image_applyRenderOffset();
 
