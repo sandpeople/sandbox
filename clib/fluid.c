@@ -11,7 +11,7 @@ static int fluid_map_x = 0;
 static int fluid_map_y = 0;
 double *fluid_map[FLUID_COUNT] = { 0 };
 
-double reduce_factor = 1.5;
+double reduce_factor = 3;
 
 void fluid_init(int width, int height) {
     int new_fluid_map_x = (int)((double)width / reduce_factor);
@@ -61,6 +61,12 @@ void fluid_drawIfThere(int type, int worldX, int worldY,
         int xsize) {
     int x = worldX;
     int y = worldY;
+    int drawx = x;
+    int drawy = y;
+    int jitterx = (int)(rand0to1() * 2) - 1;
+    int jittery = (int)(rand0to1() * 2) - 1;
+    x += jitterx;
+    y += jittery;
     double alpha = fluid_checkWorld(type, x, y) +
         fluid_checkWorld(type, x - 1, y - 1) * 0.5 +
         fluid_checkWorld(type, x - 1, y) * 0.5 +
@@ -70,7 +76,7 @@ void fluid_drawIfThere(int type, int worldX, int worldY,
         fluid_checkWorld(type, x + 1, y + 1) * 0.5;
     alpha = alpha * alpha;
     if (alpha > 0.7) alpha = 0.7;
-    simulation_addPixel(x + y * xsize, 255, 0, 0, alpha * 255);
+    simulation_addPixel(drawx + drawy * xsize, 255, 0, 0, alpha * 255);
 }
 
 void fluid_drawAllIfThere(int x, int y, int xsize) {
@@ -109,7 +115,7 @@ void fluid_update(int type, int x, int y) {
     int worldX = ((double)x * reduce_factor);
     int worldY = ((double)y * reduce_factor);
 
-    double jumpLength = 3;
+    double jumpLength = 3 / reduce_factor;
     double velocity_x = 0;
     double velocity_y = 0;
 
@@ -118,8 +124,8 @@ void fluid_update(int type, int x, int y) {
         &velocity_x, &velocity_y);
 
     // Scale velocity:
-    velocity_x /= 5.0;
-    velocity_y /= 5.0;
+    velocity_x /= 5.0 * reduce_factor;
+    velocity_y /= 5.0 * reduce_factor;
     
     // Limit to jump length:
     if (velocity_x > jumpLength) {
@@ -134,31 +140,25 @@ void fluid_update(int type, int x, int y) {
     if (velocity_y < -jumpLength) {
         velocity_y = -jumpLength;
     }
-
+   
     double xfac = 1000.0 / ((double)fluid_map_x);
     double yfac = 1000.0 / ((double)fluid_map_y);
 
     int target_x = (double)x + velocity_x * xfac;
     int target_y = (double)y + velocity_y * yfac;
 
-    if (target_x > x + 5) {
-        target_x = x + 5;
+    if (target_x > x + 5.0 / reduce_factor) {
+        target_x = x + 5.0 / reduce_factor;
     }
-    if (target_y > y + 5) {
-        target_y = y + 5;
+    if (target_y > y + 5.0 / reduce_factor) {
+        target_y = y + 5.0 / reduce_factor;
     }
-    if (target_x < x - 5) {
-        target_x = x - 5;
+    if (target_x < x - 5.0 / reduce_factor) {
+        target_x = x - 5.0 / reduce_factor;
     }
-    if (target_y < y - 5) {
-        target_y = y - 5;
+    if (target_y < y - 5.0 / reduce_factor) {
+        target_y = y - 5.0 / reduce_factor;
     }
-
-    // Add a bit of jitter:
-    target_x += (int)(rand0to1() - 0.5);
-    target_x -= (int)(rand0to1() - 0.5);
-    target_y += (int)(rand0to1() - 0.5);
-    target_y -= (int)(rand0to1() - 0.5);
 
     // Transfer along the slope of the ground:
     double ownAmount = fluid_map[type][x + y * fluid_map_x];
@@ -167,30 +167,33 @@ void fluid_update(int type, int x, int y) {
                 target_y < fluid_map_y &&
                 x >= 0 && x < fluid_map_x && y >= 0 &&
                 y < fluid_map_y) {
-            double transfer = 0.2 * ownAmount;
+            double transfer = 0.05 * ownAmount;
             if (transfer > fluid_map[type][x + y * fluid_map_x] * 0.5) {
                 transfer = fluid_map[type][x + y * fluid_map_x] * 0.5;
             }
-            fluid_map[type][target_x + target_y * fluid_map_x] += transfer;
-            fluid_map[type][x + y * fluid_map_x] -= transfer;
+            double amount = fmax(0, (10.0 * reduce_factor) -
+                fluid_map[type][target_x + target_y * fluid_map_x]);
+            fluid_map[type][target_x + target_y * fluid_map_x] += amount;
+            fluid_map[type][x + y * fluid_map_x] -= amount;
             ownAmount = fluid_map[type][x + y * fluid_map_x];
         }
     }
 
     // Transfer evenly to all neighboring pixels:
-    for (int neighbor_x = -2; neighbor_x <= 2; neighbor_x += 1) {
-        for (int neighbor_y = -2; neighbor_y <= 2; neighbor_y += 1) {
+    int range = (double)4.0 / reduce_factor;
+    if (range < 1) range = 1;
+    for (int neighbor_x = -range; neighbor_x <= range; neighbor_x += 1) {
+        for (int neighbor_y = -range; neighbor_y <= range; neighbor_y += 1) {
             if (neighbor_x == 0 && neighbor_y == 0)
                 continue;
 
-            // Transfer to around 10% of own amount:
-            double transfer = 0.1 * ownAmount;
-            if (transfer > ownAmount) {
-                transfer = ownAmount;
-            }
+            // Transfer to around 5% of own amount:
+            double transfer = 0.05 * ownAmount / (fabs(neighbor_x) + fabs(neighbor_y));
+            transfer /= range;
 
             // Transfer target limit should be fmax(ownAmount, 10.0):
-            double limit = fmax(ownAmount, 10.0); 
+            double limit = fmax(fmax(ownAmount, 10.0 * reduce_factor),
+                fluid_map[type][x + y * fluid_map_x]);
 
             // Do transfer and see how much we managed to transfer:
             double gone = fluid_tryTransfer(type, x + neighbor_x,
@@ -198,18 +201,17 @@ void fluid_update(int type, int x, int y) {
 
             // Reduce transferred fluid from ourselves:
             fluid_map[type][x + y * fluid_map_x] -= gone;
-            ownAmount = fluid_map[type][x + y * fluid_map_x];
         }
     } 
 }
 
 void fluid_randomSpawns() {
-    for (int i = 0; i < 200; i++) {
+    for (int i = 0; i < 50; i++) {
         double x = rand0to1();
         double y = rand0to1();
         int fluid_x = x * fluid_map_x;
         int fluid_y = y * fluid_map_y;
-        fluid_spawn(FLUID_WATER, fluid_x, fluid_y, 5000 + rand0to1() * 1000);
+        fluid_spawn(FLUID_WATER, fluid_x, fluid_y, (500 + rand0to1() * 100) / reduce_factor);
     }
 }
 

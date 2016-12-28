@@ -76,8 +76,8 @@ void topology_calculate_drift(int x, int y, double *vx, double *vy) {
 
     // No cached value if we arrive here. Calculate one:
     int radius = 20;
-    int scan_start_x = x - (radius / 2.0);
-    int scan_start_y = y - (radius / 2.0);
+    int scan_start_x = x + 0.5 - (radius / 2.0);
+    int scan_start_y = y + 0.5 - (radius / 2.0);
     double vec_x = 0;
     double vec_y = 0;
     double center_height = height_map[x + y * topology_map_x]; 
