@@ -63,8 +63,8 @@ void fluid_drawIfThere(int type, int worldX, int worldY,
     int y = worldY;
     int drawx = x;
     int drawy = y;
-    int jitterx = (int)(rand0to1() * 2) - 1;
-    int jittery = (int)(rand0to1() * 2) - 1;
+    int jitterx = (int)(rand0to1() * 4) - 2;
+    int jittery = (int)(rand0to1() * 4) - 2;
     x += jitterx;
     y += jittery;
     double alpha = fluid_checkWorld(type, x, y) +
