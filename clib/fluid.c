@@ -86,16 +86,21 @@ void fluid_drawAllIfThere(int x, int y, int xsize) {
 }
 
 double fluid_tryTransfer(int type, int target_x, int target_y,
-        double amount, double max) {
+        double amount, double max, double hard_max) {
     if (target_x < 0 || target_x >= fluid_map_x ||
             target_y < 0 || target_y >= fluid_map_y) {
         return 0;
     }
-    if (fluid_map[type][target_x + target_y * fluid_map_x] + amount > max) {
-        amount = max - fluid_map[type][target_x + target_y * fluid_map_x];
+    if (fluid_map[type][target_x + target_y * fluid_map_x] + amount >
+            hard_max) {
+        amount = hard_max - fluid_map[type][target_x + target_y *
+            fluid_map_x];
         if (amount < 0) {
             amount = 0;
         }
+    }
+    if (fluid_map[type][target_x + target_y * fluid_map_x] + amount > max) {
+        amount = amount * 0.5;
     }
     fluid_map[type][target_x + target_y * fluid_map_x] += amount;
     return amount;
@@ -171,7 +176,7 @@ void fluid_update(int type, int x, int y) {
             if (transfer > fluid_map[type][x + y * fluid_map_x] * 0.5) {
                 transfer = fluid_map[type][x + y * fluid_map_x] * 0.5;
             }
-            double amount = fmax(0, (10.0 * reduce_factor) -
+            double amount = fmax(0.01 * ownAmount, (10.0 * reduce_factor) -
                 fluid_map[type][target_x + target_y * fluid_map_x]);
             fluid_map[type][target_x + target_y * fluid_map_x] += amount;
             fluid_map[type][x + y * fluid_map_x] -= amount;
@@ -192,12 +197,12 @@ void fluid_update(int type, int x, int y) {
             transfer /= range;
 
             // Transfer target limit should be fmax(ownAmount, 10.0):
-            double limit = fmax(fmax(ownAmount, 10.0 * reduce_factor),
+            double limit = fmin(fmin(ownAmount, 100.0 * reduce_factor),
                 fluid_map[type][x + y * fluid_map_x]);
 
             // Do transfer and see how much we managed to transfer:
             double gone = fluid_tryTransfer(type, x + neighbor_x,
-                y + neighbor_y, transfer, limit);
+                y + neighbor_y, transfer, limit, fluid_map[type][x + y * fluid_map_x]);
 
             // Reduce transferred fluid from ourselves:
             fluid_map[type][x + y * fluid_map_x] -= gone;
@@ -206,12 +211,12 @@ void fluid_update(int type, int x, int y) {
 }
 
 void fluid_randomSpawns() {
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 10; i++) {
         double x = rand0to1();
         double y = rand0to1();
         int fluid_x = x * fluid_map_x;
         int fluid_y = y * fluid_map_y;
-        fluid_spawn(FLUID_WATER, fluid_x, fluid_y, (500 + rand0to1() * 100) / reduce_factor);
+        fluid_spawn(FLUID_WATER, fluid_x, fluid_y, (5 + rand0to1() * 1.0) / reduce_factor);
     }
 }
 
