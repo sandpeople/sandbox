@@ -50,7 +50,7 @@ function init() {
     {
         img[0].src = url_pic + "?time=" + (new Date()).getTime();
     }
-
+    setInterval(refresh, refreshInterval);
     refresh();
 }
 
