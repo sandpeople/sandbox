@@ -101,7 +101,6 @@ void particle_move(struct particle_instance *inst, double x, double y) {
 }
 
 void particle_render(int type) {
-    printf("Rendering particles of type %d\n", type);
     struct particle_instance* inst = plist[type];
     SDL_Rect dest = {0};
     while (inst) {

@@ -16,7 +16,6 @@ void topology_setHeightConfig(double heightShift, double heightScale) {
     pthread_mutex_lock(topology_lock);
     config_heightShift = heightShift;
     config_heightScale = heightScale;
-    printf("SHIFT: %f\n", config_heightShift);
     pthread_mutex_unlock(topology_lock);
 }
 
