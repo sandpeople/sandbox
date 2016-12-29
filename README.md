@@ -32,7 +32,19 @@ Afterwards, launch the program with:
 ./main.py
 ```
 
-## Cron
+## Keyboard shortcuts
+
+- Escape: terminate the program
+
+- C: enter map offset adjustment mode. Click and drag with mouse to adjust
+  (for projection image calibration)
+
+- X: enter map zoom adjustment mode. Click and drag with mouse to adjust
+  (for projection image calibration)
+
+## Cron for automatic updates
+
+We use a cronjob for automatic updates.
 
 example at tools/cron
 
