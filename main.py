@@ -39,7 +39,29 @@ height_scale = float(parser.get("main", "height_scale"))
 offset=3.5
 screen_resolution_x = int(parser.get("main", "screen_resolution_x"))
 screen_resolution_y = int(parser.get("main", "screen_resolution_y"))
+try:
+    map_offset_x = float(parser.get("main", "map_offset_x"))
+except configparser.NoOptionError:
+    map_offset_x = 0.0
+try:
+    map_offset_y = float(parser.get("main", "map_offset_y"))
+except configparser.NoOptionError:
+    map_offset_y = 0.0
 clib_interface.set_height_config(height_shift, height_scale)
+clib_interface.reset_map_drag()
+clib_interface.drag_map(map_offset_x, map_offset_y)
+
+def rewrite_config():
+    with open("config.ini", "w") as f:
+        writer = configparser.ConfigParser()
+        writer.add_section("main")
+        writer.set("main", "height_shift", height_shift)
+        writer.set("main", "height_scale", height_scale)
+        writer.set("main", "screen_resolution_x", screen_resolution_x)
+        writer.set("main", "screen_resolution_y", screen_resolution_y)
+        writer.set("main", "map_offset_x", map_offset_x)
+        writer.set("main", "map_offset_y", map_offset_y)
+        writer.write(f)
 
 # Compute proper fullscreen constants for openCV version:
 fullscreen_const = None
@@ -61,6 +83,8 @@ def mouse_handling(event, x, y, flags, param):
     global mouse_drag_start
     global mouse_dragging
     global calibration
+    global map_offset_x
+    global map_offset_y
     if event == cv2.EVENT_LBUTTONDOWN:
         mouse_dragging = True
         mouse_drag_start = (x, y)
@@ -78,9 +102,11 @@ def mouse_handling(event, x, y, flags, param):
         if mouse_drag_report_diff[0] != 0 or \
                 mouse_drag_report_diff[1] != 0:
             if calibration:
-                clib_interface.drag_map(
-                    -float(mouse_drag_report_diff[0] * 0.05),
-                    -float(mouse_drag_report_diff[1] * 0.05))
+                map_offset_x += -float(mouse_drag_report_diff[0] * 0.05)
+                map_offset_y += -float(mouse_drag_report_diff[1] * 0.05)
+                rewrite_config()
+                clib_interface.reset_map_drag()
+                clib_interface.drag_map(map_offset_x, map_offset_y)
 
 run=True
 gradient=cv2.imread('gradient.bmp',1)

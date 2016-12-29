@@ -24,6 +24,11 @@ void images_addSimulationImageRenderOffset(double x, double y) {
     renderOffsetY += y;
 }
 
+void images_resetSimulationImageRenderOffset() {
+    renderOffsetX = 0;
+    renderOffsetY = 0;
+}
+
 void images_init_simulation_image(int screen_width, int screen_height) {
     if (images_simulation_image) {
         if (screen_width == simulation_screen_width &&

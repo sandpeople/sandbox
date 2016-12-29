@@ -75,6 +75,10 @@ void interface_mapOffset(double x, double y) {
     images_addSimulationImageRenderOffset(y, x); 
 }
 
+void interface_resetMapOffset(double x, double y) {
+    images_resetSimulationImageRenderOffset();
+}
+
 void interface_spawnWater(double x, double y) {
     int wX = (int)x;
     int wY = (int)y;

@@ -30,6 +30,13 @@ def drag_map(x, y):
     interface_mapOffset.argtypes = [ctypes.c_double, ctypes.c_double]
     interface_mapOffset(x, y)
 
+def reset_map_drag():
+    global lib
+    if lib == None:
+        lib = ctypes.cdll.LoadLibrary('./libclib.so')
+    interface_resetMapOffset = lib.interface_resetMapOffset
+    interface_resetMapOffset()
+
 def add_car(pos_x, pos_y):
     pass
 
