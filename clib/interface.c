@@ -75,3 +75,13 @@ void interface_mapOffset(double x, double y) {
     images_addSimulationImageRenderOffset(y, x); 
 }
 
+void interface_spawnWater(double x, double y) {
+    int wX = (int)x;
+    int wY = (int)y;
+    if (wX < 0) wX = 0;
+    if (wX >= images_simulation_image->w) wX = images_simulation_image->w;
+    if (wY < 0) wY = 0;
+    if (wY >= images_simulation_image->h) wY = images_simulation_image->h; 
+    fluid_spawn(FLUID_WATER, wX, wY, 500);   
+}
+

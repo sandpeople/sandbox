@@ -101,6 +101,7 @@ void particle_move(struct particle_instance *inst, double x, double y) {
 }
 
 void particle_render(int type) {
+    printf("Rendering particles of type %d\n", type);
     struct particle_instance* inst = plist[type];
     SDL_Rect dest = {0};
     while (inst) {
@@ -114,9 +115,10 @@ void particle_render(int type) {
             &w, &h);
         double abs_pos_x = inst->x * ((double)w);
         double abs_pos_y = inst->y * ((double)h);
-       
         dest.x = abs_pos_x;
         dest.y = abs_pos_y;
+        dest.x = 64;
+        dest.y = 64;
         if (type == PARTICLE_GRASS) {
             if (topology_scan_type(TOPOLOGY_GRASS, dest.x, dest.y, 15) < 0.5) {
                 inst = inst->next;
@@ -190,5 +192,7 @@ void particle_renderAll(int from_type, int to_type) {
     for (int i = from_type; i < to_type; i++) {
         particle_render(i);
     }
+    SDL_RenderPresent(simulation_getRenderer());
+    SDL_SetRenderTarget(simulation_getRenderer(), NULL);
 }
 

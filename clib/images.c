@@ -54,6 +54,7 @@ void images_simulation_3d_clear() {
 
 static SDL_Texture* upload_image = NULL;
 void images_simulation_2d_to_3d_upload() {
+    printf("2d_to_3d_upload\n");
     assert(images_simulation_3d_image != NULL);
     SDL_Texture *oldTarget = SDL_GetRenderTarget(simulation_getRenderer());
     if (SDL_UpdateTexture(
@@ -117,6 +118,7 @@ void images_simulation_2d_to_3d_upload() {
 
 /// Download 3d image and replace current 2d contents:
 void images_simulation_3d_to_2d_download() {
+    printf("3d_to_2d_download\n");
     assert(images_simulation_3d_image != NULL);
     SDL_Rect dst = {0, 0,
         images_simulation_image->w,

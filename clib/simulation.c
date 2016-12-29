@@ -30,6 +30,8 @@ void simulation_initialize(int width, int height) {
 
     SDL_Init(SDL_INIT_VIDEO);
 
+    glewExperimental = GL_TRUE;
+    glewInit();
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 0);

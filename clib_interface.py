@@ -37,7 +37,13 @@ def remove_all_cars():
     pass
 
 def spawn_water(pos_x, pos_y):
-    pass
+    global lib
+    if lib == None:
+        lib = ctypes.cdll.LoadLibrary('./libclib.so')
+    spawn_water = lib.interface_spawnWater
+    spawn_water.argtypes = [ctypes.c_double, ctypes.c_double]
+    spawn_water(pos_x, pos_y)
+
 
 
 
