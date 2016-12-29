@@ -6,7 +6,7 @@ import os
 import json
 from jinja2 import Environment, FileSystemLoader
 import clib_interface
-
+#
 height = 300
 width  = 400
 
@@ -21,12 +21,13 @@ class sandcontrol(object):
         return tmpl.render()
 
     @cherrypy.expose
-    @cherrypy.tools.json_out()
-    def switch(self, id):
-        if "wat-on" in id:
+    def switch(self, item, pos):
+        x = pos['x']
+        y = pos['y']
+
+        print(item, pos, x,y)
+        if "wat-on" is item:
            clib_interface.spawn_water(height/2,width/2)
-           global tmpl
-           return tmpl.render()
         else:
            print("button nr {} pressed".format(id))
            return json.dumps({"text" : "button {} ".format(id)})
@@ -34,8 +35,6 @@ class sandcontrol(object):
     @cherrypy.expose
     def pic(self, *args, **kw):
         cherrypy.response.headers['Content-Type'] = "image/jpeg"
-
-
         if not self.pqueue.empty():
             try:
                 cv2.imwrite('webroot/map.jpg', self.pqueue.get(block=False), [int(cv2.IMWRITE_JPEG_QUALITY), 10])
