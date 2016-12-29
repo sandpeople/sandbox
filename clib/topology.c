@@ -257,7 +257,7 @@ void topology_drawToSimImage(const uint8_t* depth_array, int xsize, int ysize) {
 
         // Update topology map:
         topology_map[i] = TOPOLOGY_NONE;
-        if (gradient_abs_x_pos < 110 && gradient_abs_x_pos > 65) {
+        if (gradient_abs_x_pos < 140 && gradient_abs_x_pos > 65) {
             topology_map[i] = TOPOLOGY_GRASS;
         }
 
