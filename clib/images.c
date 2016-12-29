@@ -16,19 +16,6 @@ SDL_Texture *images_simulation_3d_image = NULL;
 static int simulation_screen_width = 0;
 static int simulation_screen_height = 0;
 
-double renderOffsetX = 0;
-double renderOffsetY = 0;
-
-void images_addSimulationImageRenderOffset(double x, double y) {
-    renderOffsetX += x;
-    renderOffsetY += y;
-}
-
-void images_resetSimulationImageRenderOffset() {
-    renderOffsetX = 0;
-    renderOffsetY = 0;
-}
-
 void images_init_simulation_image(int screen_width, int screen_height) {
     if (images_simulation_image) {
         if (screen_width == simulation_screen_width &&
@@ -187,36 +174,6 @@ void images_simulation_3d_to_2d_blit_ontop() {
     SDL_SetRenderTarget(simulation_getRenderer(), oldTarget);
     SDL_BlitSurface(_blitOnTopTempImage, NULL, images_simulation_image,
         NULL);
-}
-
-static SDL_Surface *renderTempSurface = NULL;
-void image_applyRenderOffset() {
-    if (!renderTempSurface) {
-        renderTempSurface = SDL_CreateRGBSurfaceWithFormat(
-            0, simulation_screen_width,
-            simulation_screen_height, 0, format);
-    }
-
-    assert(!simulation_isSurfaceLocked());
-
-    SDL_Rect rect;
-    memset(&rect, 0, sizeof(rect));
-    rect.x = -((int)(renderOffsetX + 0.5));
-    rect.y = -((int)(renderOffsetY + 0.5));
-
-    if (SDL_BlitSurface(images_simulation_image,
-            NULL, renderTempSurface, &rect) != 0) {
-        fprintf(stderr, "SDL error in SDL_BlitSurface: %s\n",
-            SDL_GetError());
-        return;
-    }
-    SDL_FillRect(images_simulation_image, NULL, 0x000000);
-    if (SDL_BlitSurface(renderTempSurface,
-            NULL, images_simulation_image, NULL) != 0) {
-        fprintf(stderr, "SDL error in SDL_BlitSurface: %s\n",
-            SDL_GetError());
-        return;
-    }
 }
 
 SDL_Surface *image_load_converted(const char *path, int alpha) {

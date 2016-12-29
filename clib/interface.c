@@ -47,9 +47,6 @@ void interface_run(
     // Draw particles on top of water: 
     simulation_drawAfterWater();
 
-    // Apply render offset for coarse calibration correction:
-    image_applyRenderOffset();
-
     // Draw simulation image with fixed orientation:
     uint8_t *output_colors = (uint8_t*)intermediate_colors_buf;
     uint8_t *output_colors_final = (uint8_t*)output_colors_v;
@@ -72,11 +69,11 @@ void interface_setHeightConfig(double heightShift, double heightScale) {
 }
 
 void interface_mapOffset(double x, double y) {
-    images_addSimulationImageRenderOffset(y, x); 
+    simulation_addMapOffset(y, x); 
 }
 
-void interface_resetMapOffset(double x, double y) {
-    images_resetSimulationImageRenderOffset();
+void interface_resetMapOffset() {
+    simulation_resetMapOffset();
 }
 
 void interface_spawnWater(double x, double y) {

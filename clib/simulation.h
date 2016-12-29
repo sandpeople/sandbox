@@ -16,6 +16,8 @@ void simulation_unlockSurface();
 int simulation_isSurfaceLocked();
 void simulation_updateMovingObjects();
 int simulation_getFluidUpdateCount();
+void simulation_addMapOffset();
+void simulation_resetMapOffset();
 
 #endif  // _SANDBOX_SIMULATION_H_
 

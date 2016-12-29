@@ -40,3 +40,9 @@ example crontab entry:
 
 * * * * * /bin/bash /[path to git]/sandbox/tools/cron
 
+## License
+
+This project is licensed under the terms of GPLv2+
+(GNU General Public License version 2, or (at your
+option) any later version). See `COPYING.txt` for details.
+
