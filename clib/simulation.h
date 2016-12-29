@@ -18,6 +18,7 @@ void simulation_updateMovingObjects();
 int simulation_getFluidUpdateCount();
 void simulation_addMapOffset();
 void simulation_resetMapOffset();
+void simulation_setMapZoom(double z);
 
 #endif  // _SANDBOX_SIMULATION_H_
 

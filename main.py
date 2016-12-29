@@ -68,8 +68,10 @@ except configparser.NoOptionError:
     map_offset_y = 0.0
 try:
     map_zoom = float(parser.get("main", "map_zoom"))
+    if map_zoom < 0.00001:
+        map_zoom = 1.0
 except configparser.NoOptionError:
-    map_zoom = 0.0
+    map_zoom = 1.0
 clib_interface.set_height_config(height_shift, height_scale)
 clib_interface.reset_map_drag()
 clib_interface.drag_map(map_offset_x, map_offset_y)
@@ -110,6 +112,7 @@ def mouse_handling(event, x, y, flags, param):
     global calibration_drag
     global map_offset_x
     global map_offset_y
+    global map_zoom
     if event == cv2.EVENT_LBUTTONDOWN:
         mouse_dragging = True
         mouse_drag_start = (x, y)
@@ -132,6 +135,12 @@ def mouse_handling(event, x, y, flags, param):
                 rewrite_config()
                 clib_interface.reset_map_drag()
                 clib_interface.drag_map(map_offset_x, map_offset_y)
+            elif calibration_zoom:
+                drag_dist = \
+                    mouse_drag_report_diff[1]
+                map_zoom += drag_dist * 0.0001
+                clib_interface.set_map_zoom(map_zoom)
+                rewrite_config()
 
 run=True
 gradient=cv2.imread('gradient.bmp',1)

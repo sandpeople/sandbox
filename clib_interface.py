@@ -37,6 +37,14 @@ def reset_map_drag():
     interface_resetMapOffset = lib.interface_resetMapOffset
     interface_resetMapOffset()
 
+def set_map_zoom(zoom):
+    global lib
+    if lib == None:
+        lib = ctypes.cdll.LoadLibrary('./libclib.so')
+    interface_zoom = lib.interface_setMapZoom
+    interface_zoom.argtypes = [ctypes.c_double]
+    interface_zoom(zoom)
+
 def add_car(pos_x, pos_y):
     pass
 

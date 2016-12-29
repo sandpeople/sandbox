@@ -76,6 +76,12 @@ void interface_resetMapOffset() {
     simulation_resetMapOffset();
 }
 
+void interface_setMapZoom(double zoom) {
+    if (zoom < 0.001 || zoom > 1000)
+        return;
+    simulation_setMapZoom(zoom);
+}
+
 void interface_spawnWater(double x, double y) {
     int wX = (int)x;
     int wY = (int)y;

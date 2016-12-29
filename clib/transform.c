@@ -89,8 +89,12 @@ void transform_draw(struct rendergrid *g, SDL_Texture *t) {
 
     SDL_Rect rect;
     memset(&rect, 0, sizeof(rect));
-    rect.x = -((int)(g->renderOffsetX + 0.5));
-    rect.y = -((int)(g->renderOffsetY + 0.5));
+    rect.x = -((int)(g->renderOffsetX + 0.5)) - (
+        (images_simulation_image->w * g->renderScale) -
+        images_simulation_image->w) * 0.5;
+    rect.y = -((int)(g->renderOffsetY + 0.5)) - (
+        (images_simulation_image->h * g->renderScale) -
+        images_simulation_image->h) * 0.5;
     rect.w = ((double)images_simulation_image->w * g->renderScale);
     rect.h = ((double)images_simulation_image->h * g->renderScale);
 

@@ -200,6 +200,9 @@ void simulation_addPixel(int i, int r, int g, int b, int a) {
 }
 
 void simulation_addMapOffset(double x, double y) {
+    if (!renderTransformGrid)
+        renderTransformGrid = transform_createNewGrid(
+            renderTransformGridX, renderTransformGridY);
     transform_addRenderOffset(renderTransformGrid, x, y);
 }
 
@@ -208,6 +211,13 @@ void simulation_resetMapOffset() {
         renderTransformGrid = transform_createNewGrid(
             renderTransformGridX, renderTransformGridY);
     transform_resetRenderOffset(renderTransformGrid);
+}
+
+void simulation_setMapZoom(double zoom) {
+    if (!renderTransformGrid)
+        renderTransformGrid = transform_createNewGrid(
+            renderTransformGridX, renderTransformGridY);
+    transform_setRenderScale(renderTransformGrid, zoom);
 }
 
 void simulation_unlockSurface() {
