@@ -5,6 +5,10 @@ import StringIO
 import os
 import json
 from jinja2 import Environment, FileSystemLoader
+import clib_interface
+
+height = 300
+width  = 400
 
 class sandcontrol(object):
     def __init__(self, queue):
@@ -19,8 +23,13 @@ class sandcontrol(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def switch(self, id):
-        print("button nr {} pressed".format(id))
-        return json.dumps({"text" : "button {} ".format(id)})
+        if "wat-on" in id:
+           clib_interface.spawn_water(height/2,width/2)
+           global tmpl
+           return tmpl.render()
+        else:
+           print("button nr {} pressed".format(id))
+           return json.dumps({"text" : "button {} ".format(id)})
 
     @cherrypy.expose
     def pic(self, *args, **kw):
