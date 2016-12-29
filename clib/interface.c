@@ -41,7 +41,7 @@ void interface_run(
     assert(simulation_isSurfaceLocked());
     fluid_drawAll(xsize, ysize);
 
-    //simulation_updateMovingObjects();
+    simulation_updateMovingObjects();
     simulation_unlockSurface();
 
     // Draw particles on top of water: 
