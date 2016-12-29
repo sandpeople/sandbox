@@ -29,11 +29,11 @@ class sandcontrol(object):
 
         if not self.pqueue.empty():
             try:
-                cv2.imwrite('map.png', self.pqueue.get(block=False))
+                cv2.imwrite('webroot/map.png', self.pqueue.get(block=False))
             except:
                 pass
 
-        with open("map.png") as f:
+        with open("webroot/map.png") as f:
             return f.read()
 
 
