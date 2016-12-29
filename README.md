@@ -32,4 +32,11 @@ Afterwards, launch the program with:
 ./main.py
 ```
 
+## Cron
+
+example at tools/cron
+
+example crontab entry:
+
+* * * * * /bin/bash /[path to git]/sandbox/tools/cron
 
