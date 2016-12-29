@@ -3,7 +3,7 @@ clib.so
 *.o
 libclib.so
 clib_test/test
-webroot/map.png
+webroot/map.jpg
 *.swp
 *.swo
 *~

@@ -150,7 +150,7 @@ while run is True:
             pqueue.put(resized, block=False)
         except:
             pass
-    cv2.imwrite('webroot/map.png', resized)
+    cv2.imwrite('webroot/map.jpg', resized, [int(cv2.IMWRITE_JPEG_QUALITY), 10])
     cv2.imshow('Beamer Image', resized)
    
     key = cv2.waitKey(10)

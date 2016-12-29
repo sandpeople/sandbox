@@ -33,16 +33,16 @@ class sandcontrol(object):
 
     @cherrypy.expose
     def pic(self, *args, **kw):
-        cherrypy.response.headers['Content-Type'] = "image/png"
+        cherrypy.response.headers['Content-Type'] = "image/jpeg"
 
 
         if not self.pqueue.empty():
             try:
-                cv2.imwrite('webroot/map.png', self.pqueue.get(block=False))
+                cv2.imwrite('webroot/map.jpg', self.pqueue.get(block=False), [int(cv2.IMWRITE_JPEG_QUALITY), 10])
             except:
                 pass
 
-        with open("webroot/map.png") as f:
+        with open("webroot/map.jpg") as f:
             return f.read()
 
 
