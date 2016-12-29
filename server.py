@@ -1,5 +1,7 @@
 #!/usr/bin/python
 import cherrypy
+from cherrypy.lib import file_generator
+import StringIO
 import os
 import json
 from jinja2 import Environment, FileSystemLoader
@@ -21,14 +23,19 @@ class sandcontrol(object):
         return json.dumps({"text" : "button {} ".format(id)})
 
     @cherrypy.expose
-    @cherrypy.tools.json_out()
     def pic(self, *args, **kw):
+        cherrypy.response.headers['Content-Type'] = "image/png"
+
+
         if not self.pqueue.empty():
             try:
-                self.picture = self.pqueue.get(block=False)
+                cv2.imwrite('webroot/map.png', self.pqueue.get(block=False))
             except:
                 pass
-        return self.picture
+
+        with open("webroot/map.png") as f:
+            return f.read()
+
 
     def launch_control(self, queue):
         start(queue)
