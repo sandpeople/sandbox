@@ -26,6 +26,8 @@ class sandcontrol(object):
         y = pos['y']
 
         print(item, pos, x,y)
+        with open("debug", "w") as f:
+            json.dump((item, pos, x, y), f)
         if "wat-on" is item:
            clib_interface.spawn_water(height/2,width/2)
         else:
