@@ -1,7 +1,8 @@
 #!/bin/bash
 
-sandbox_path=/home/sand/sandbox
+sandbox_path=/home/sand/sandbox-stable/sandbox
 
+export DISPLAY=:0
 
 cd $sandbox_path
 
@@ -14,7 +15,7 @@ REMOTE=$(git rev-parse "$UPSTREAM")
 if [ ! $LOCAL == $REMOTE ]; then
     git pull
     make
-    killall main.py
-    python ./main.py
+    killall -9 main.py
+    python ./main.py &
 fi
 

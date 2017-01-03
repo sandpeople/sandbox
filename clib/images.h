@@ -27,9 +27,6 @@ void images_simulation_2d_to_3d_upload();
 /// current 2D render image but instead blit on top with alpha
 void images_simulation_3d_to_2d_blit_ontop();
 
-/// Add render offset to simulation image (for coarse calibration correction):
-void images_addSimulationImageRenderOffset(double x, double y);
-
 /// Apply current render offset to simulation image contents:
 void image_applyRenderOffset();
 

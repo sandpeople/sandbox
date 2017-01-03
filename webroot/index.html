@@ -22,7 +22,7 @@
 <script type="text/JavaScript">
 var url_pic = "/pic"; //url to load image from
 var url_api = "/api"; //url to send post data as json
-var refreshInterval = 1000; //in ms
+var refreshInterval = 500; //in ms
 var drawDate = true; //draw date string
 
 function getOffset(dom,event) {
@@ -43,13 +43,15 @@ function init() {
 		'pos': pos,
 		'item': item.val()
 	}
-        $.post('/api/change', data);
+        $.post('/switch', data);
     });
+
+    function refresh()
+    {
+        img[0].src = url_pic + "?time=" + (new Date()).getTime();
+    }
+    setInterval(refresh, refreshInterval);
     refresh();
-}
-function refresh()
-{
-    img.src = url_pic + "?time=" + (new Date()).getTime();
 }
 
 </script>
@@ -116,7 +118,7 @@ function refresh()
       </div>
 
       <footer class="footer">
-        <p>CCCFR</p>
+        <p>CCCFR - https://github.com/sandpeople/sandbox</p>
       </footer>
 
     </div> <!-- /container -->

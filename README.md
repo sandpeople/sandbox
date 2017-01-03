@@ -32,4 +32,29 @@ Afterwards, launch the program with:
 ./main.py
 ```
 
+## Keyboard shortcuts
+
+- Escape: terminate the program
+
+- C: enter map offset adjustment mode. Click and drag with mouse to adjust
+  (for projection image calibration)
+
+- X: enter map zoom adjustment mode. Click and drag with mouse to adjust
+  (for projection image calibration)
+
+## Cron for automatic updates
+
+We use a cronjob for automatic updates.
+
+example at tools/cron
+
+example crontab entry:
+
+* * * * * /bin/bash /[path to git]/sandbox/tools/cron
+
+## License
+
+This project is licensed under the terms of GPLv2+
+(GNU General Public License version 2, or (at your
+option) any later version). See `COPYING.txt` for details.
 

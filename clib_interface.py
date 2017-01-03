@@ -30,6 +30,21 @@ def drag_map(x, y):
     interface_mapOffset.argtypes = [ctypes.c_double, ctypes.c_double]
     interface_mapOffset(x, y)
 
+def reset_map_drag():
+    global lib
+    if lib == None:
+        lib = ctypes.cdll.LoadLibrary('./libclib.so')
+    interface_resetMapOffset = lib.interface_resetMapOffset
+    interface_resetMapOffset()
+
+def set_map_zoom(zoom):
+    global lib
+    if lib == None:
+        lib = ctypes.cdll.LoadLibrary('./libclib.so')
+    interface_zoom = lib.interface_setMapZoom
+    interface_zoom.argtypes = [ctypes.c_double]
+    interface_zoom(zoom)
+
 def add_car(pos_x, pos_y):
     pass
 
@@ -37,7 +52,13 @@ def remove_all_cars():
     pass
 
 def spawn_water(pos_x, pos_y):
-    pass
+    global lib
+    if lib == None:
+        lib = ctypes.cdll.LoadLibrary('./libclib.so')
+    spawn_water = lib.interface_spawnWater
+    spawn_water.argtypes = [ctypes.c_double, ctypes.c_double]
+    spawn_water(pos_x, pos_y)
+
 
 
 

@@ -13,7 +13,12 @@
 #include "particle.h"
 #include "simulation.h"
 #include "topology.h"
+#include "transform.h"
 
+static const int renderTransformGridX = 10;
+static const int renderTransformGridY = 10;
+
+struct rendergrid *renderTransformGrid = NULL;
 SDL_Window *hiddenWindow = NULL;
 SDL_Renderer *acceleratedRenderer = NULL;
 
@@ -30,6 +35,8 @@ void simulation_initialize(int width, int height) {
 
     SDL_Init(SDL_INIT_VIDEO);
 
+    glewExperimental = GL_TRUE;
+    glewInit();
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 0);
@@ -61,6 +68,10 @@ void simulation_initialize(int width, int height) {
 
     particle_addRandomCrowd(PARTICLE_GRASS, 5000);
     particle_addRandomCrowd(PARTICLE_CAR, 50);
+
+    if (!renderTransformGrid)
+        renderTransformGrid = transform_createNewGrid(
+            renderTransformGridX, renderTransformGridY); 
 
     simulation_initialized = 1;
 }
@@ -121,6 +132,8 @@ void simulation_drawAfterWater() {
     // Draw particles on top of fluid simulations:
     images_simulation_2d_to_3d_upload();
     particle_renderAll(PARTICLE_BELOW_WATER, PARTICLE_TYPE_COUNT);
+    // Apply final transform for runtime calibration:
+    transform_draw(renderTransformGrid, images_simulation_3d_image);
     images_simulation_3d_to_2d_download();
 }
 
@@ -184,6 +197,27 @@ void simulation_addPixel(int i, int r, int g, int b, int a) {
     if (new_b < 0) {new_b = 0;}
     if (new_b > 255) {new_b = 255;}
     pix[4*i + 3] = new_b;
+}
+
+void simulation_addMapOffset(double x, double y) {
+    if (!renderTransformGrid)
+        renderTransformGrid = transform_createNewGrid(
+            renderTransformGridX, renderTransformGridY);
+    transform_addRenderOffset(renderTransformGrid, x, y);
+}
+
+void simulation_resetMapOffset() {
+    if (!renderTransformGrid)
+        renderTransformGrid = transform_createNewGrid(
+            renderTransformGridX, renderTransformGridY);
+    transform_resetRenderOffset(renderTransformGrid);
+}
+
+void simulation_setMapZoom(double zoom) {
+    if (!renderTransformGrid)
+        renderTransformGrid = transform_createNewGrid(
+            renderTransformGridX, renderTransformGridY);
+    transform_setRenderScale(renderTransformGrid, zoom);
 }
 
 void simulation_unlockSurface() {

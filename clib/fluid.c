@@ -17,10 +17,16 @@ pthread_t *fluid_thread = NULL;
 
 double reduce_factor = 5;
 
-void fluid_spawn(int type, int x, int y, double amount) {
+void _fluid_spawn(int type, int x, int y, double amount) {
     if (x < 0 || x >= fluid_map_x || y < 0 || y > fluid_map_y) return;
     assert(type >= 0 && type < FLUID_COUNT);
     fluid_map[type][x + y * fluid_map_x] += amount;
+}
+
+void fluid_spawn(int type, int x, int y, double amount) {
+    int mapX = (double)(((double)x / (double)images_simulation_image->w) * (double)fluid_map_x);
+    int mapY = (double)(((double)y / (double)images_simulation_image->h) * (double)fluid_map_y);
+    _fluid_spawn(type, mapX, mapY, amount);
 }
 
 double fluid_check(int type, int x, int y) {
@@ -224,7 +230,7 @@ void fluid_randomSpawns() {
         double y = rand0to1();
         int fluid_x = x * fluid_map_x;
         int fluid_y = y * fluid_map_y;
-        fluid_spawn(FLUID_WATER, fluid_x, fluid_y, (60.0 + rand0to1() * 10.0) / reduce_factor);
+        _fluid_spawn(FLUID_WATER, fluid_x, fluid_y, (60.0 + rand0to1() * 10.0) / reduce_factor);
     }
 }
 
@@ -272,7 +278,7 @@ void fluid_drawAll(int xsize, int ysize) {
 	pthread_mutex_unlock(fluid_access);
 }
 
-static void *fluid_simulationThread(void *userdata) {
+static void *fluid_simulationThread(__attribute__((unused)) void *userdata) {
     while (1) {
 	    fluid_updateAll();
     }

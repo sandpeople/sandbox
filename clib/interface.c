@@ -41,14 +41,11 @@ void interface_run(
     assert(simulation_isSurfaceLocked());
     fluid_drawAll(xsize, ysize);
 
-    //simulation_updateMovingObjects();
+    simulation_updateMovingObjects();
     simulation_unlockSurface();
 
     // Draw particles on top of water: 
     simulation_drawAfterWater();
-
-    // Apply render offset for coarse calibration correction:
-    image_applyRenderOffset();
 
     // Draw simulation image with fixed orientation:
     uint8_t *output_colors = (uint8_t*)intermediate_colors_buf;
@@ -72,6 +69,26 @@ void interface_setHeightConfig(double heightShift, double heightScale) {
 }
 
 void interface_mapOffset(double x, double y) {
-    images_addSimulationImageRenderOffset(y, x); 
+    simulation_addMapOffset(y, x); 
+}
+
+void interface_resetMapOffset() {
+    simulation_resetMapOffset();
+}
+
+void interface_setMapZoom(double zoom) {
+    if (zoom < 0.001 || zoom > 1000)
+        return;
+    simulation_setMapZoom(zoom);
+}
+
+void interface_spawnWater(double x, double y) {
+    int wX = (int)x;
+    int wY = (int)y;
+    if (wX < 0) wX = 0;
+    if (wX >= images_simulation_image->w) wX = images_simulation_image->w;
+    if (wY < 0) wY = 0;
+    if (wY >= images_simulation_image->h) wY = images_simulation_image->h; 
+    fluid_spawn(FLUID_WATER, wX, wY, 500);   
 }
 

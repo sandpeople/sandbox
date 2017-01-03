@@ -16,7 +16,6 @@ void topology_setHeightConfig(double heightShift, double heightScale) {
     pthread_mutex_lock(topology_lock);
     config_heightShift = heightShift;
     config_heightScale = heightScale;
-    printf("SHIFT: %f\n", config_heightShift);
     pthread_mutex_unlock(topology_lock);
 }
 
@@ -258,7 +257,7 @@ void topology_drawToSimImage(const uint8_t* depth_array, int xsize, int ysize) {
 
         // Update topology map:
         topology_map[i] = TOPOLOGY_NONE;
-        if (gradient_abs_x_pos < 110 && gradient_abs_x_pos > 65) {
+        if (gradient_abs_x_pos < 140 && gradient_abs_x_pos > 65) {
             topology_map[i] = TOPOLOGY_GRASS;
         }
 

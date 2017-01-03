@@ -34,11 +34,32 @@ int particle_loadImage(int type, const char *path) {
     }
     SDL_Surface *img = image_load_converted(path, 1);
     if (!img) {
+        fprintf(stderr,
+            "[particle] image_load_converted fail, texture "
+            "load failed\n");
         return 0;
     }
     SDL_Texture* tex = SDL_CreateTextureFromSurface(
         simulation_getRenderer(), img);
-    SDL_FreeSurface(img); 
+    SDL_FreeSurface(img);
+    if (!tex) {
+        fprintf(stderr,
+            "[particle] SDL_CreateTextureFromSurface "
+            "fail, texture "
+            "load failed\n");
+        return 0;
+    }
+    printf("[particle] Image loaded: %s\n", path);
+    int w,h;
+    if (SDL_QueryTexture(tex, NULL, NULL, &w, &h) != 0) {
+        fprintf(stderr,
+            "[particle] SDL_QueryTexture fail, texture "
+            "load failed\n");
+        SDL_DestroyTexture(tex);
+        return 0;
+    }
+    printf("[particle] Image dimensions: %d, %d\n",
+        w, h);
     ptype->image = tex;
     return 1; 
 }
@@ -109,12 +130,11 @@ void particle_render(int type) {
         uint32_t format;
         int access;
         int w,h;
-        SDL_QueryTexture(
+        assert(SDL_QueryTexture(
             i, &format, &access,
-            &w, &h);
-        double abs_pos_x = inst->x * ((double)w);
-        double abs_pos_y = inst->y * ((double)h);
-       
+            &w, &h) == 0);
+        double abs_pos_x = inst->x * ((double)images_simulation_image->w);
+        double abs_pos_y = inst->y * ((double)images_simulation_image->h);
         dest.x = abs_pos_x;
         dest.y = abs_pos_y;
         if (type == PARTICLE_GRASS) {
@@ -123,10 +143,10 @@ void particle_render(int type) {
                 continue;
             }
         }
-        dest.x -= w / 2 - 64;
-        dest.y -= h / 2 - 64;
-        dest.w = 0;
-        dest.h = 0;
+        dest.x -= w / 2;
+        dest.y -= h / 2;
+        dest.w = w;
+        dest.h = h;
         SDL_RenderCopyEx(simulation_getRenderer(),
             i, NULL, &dest,
             inst->angle, NULL, SDL_FLIP_NONE);
@@ -190,5 +210,7 @@ void particle_renderAll(int from_type, int to_type) {
     for (int i = from_type; i < to_type; i++) {
         particle_render(i);
     }
+    SDL_RenderPresent(simulation_getRenderer());
+    SDL_SetRenderTarget(simulation_getRenderer(), NULL);
 }
 
