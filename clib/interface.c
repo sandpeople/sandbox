@@ -92,3 +92,7 @@ void interface_spawnWater(double x, double y) {
     fluid_spawn(FLUID_WATER, wX, wY, 500);   
 }
 
+void interface_resetWater() {
+    fluid_resetAll();    
+}
+

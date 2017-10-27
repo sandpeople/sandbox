@@ -232,6 +232,9 @@ while run is True:
             cv2.setWindowProperty("Beamer Image", cv2.WND_PROP_FULLSCREEN,
                 fullscreen_const)
             cv2.setMouseCallback('Beamer Image', mouse_handling)
+    elif key == 119: # W (reset water)
+        print("RESET WATER")
+        clib_interface.reset_water() 
     elif key == 99: # C (calibration with dragging)
         if not calibration_drag:
             calibration_zoom = False

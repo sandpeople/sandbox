@@ -106,8 +106,8 @@ void topology_calculate_drift(int x, int y, double *vx, double *vy) {
 
     // See if we have a cached value:
     if (fabs(topology_drift_cache_height[currentindex] - cache_match_height) <
-            1.0f) {
-        // we do!
+            3.0f) {
+        // We do!
         *vx = topology_drift_cache_value_x[currentindex];
         *vy = topology_drift_cache_value_y[currentindex];
         pthread_mutex_unlock(topology_lock);
@@ -116,19 +116,20 @@ void topology_calculate_drift(int x, int y, double *vx, double *vy) {
     topology_drift_cache_height[currentindex] = cache_match_height;
 
     // No cached value if we arrive here. Calculate one:
-    int radius = 20;
+    int radius = 30;
     int scan_start_x = x + 0.5 - (radius / 2.0);
     int scan_start_y = y + 0.5 - (radius / 2.0);
+    const int scan_step = 2;
     double vec_x = 0;
     double vec_y = 0;
     double center_height = _heightAt(x, y);
-    for (int px = scan_start_x; px < scan_start_x + radius; px++) {
+    for (int px = scan_start_x; px < scan_start_x + radius; px += scan_step) {
         if (px < 0 || px >= topology_map_x) continue;
-        for (int py = scan_start_y; py < scan_start_y + radius; py++) {
+        for (int py = scan_start_y; py < scan_start_y + radius; py += scan_step) {
             if (py < 0 || py >= topology_map_y) continue;
             double height_diff = center_height -
                 _heightAt(px, py);
-            double height_diff_fac = height_diff / 10.0;
+            double height_diff_fac = height_diff / 20.0;
             if (height_diff_fac > 1.0) {
                 height_diff_fac = 1.0;
             }
@@ -141,8 +142,8 @@ void topology_calculate_drift(int x, int y, double *vx, double *vy) {
                 height_diff_fac *= height_diff_fac;
                 height_diff_fac = -height_diff_fac;
             }
-            vec_x += (px - x) * height_diff_fac * 5;
-            vec_y += (py - y) * height_diff_fac * 5;
+            vec_x += (px - x) * height_diff_fac * 10;
+            vec_y += (py - y) * height_diff_fac * 10;
         }
     }
     double max = 25.0f;

@@ -350,3 +350,11 @@ void fluid_init(int width, int height) {
     } 
 }
 
+void fluid_resetAll() {
+    pthread_mutex_lock(fluid_access);
+    for (int i = 0; i < FLUID_COUNT; i++) {
+        memset(fluid_map[i], 0, sizeof(double) *
+            fluid_map_x * fluid_map_y);
+    }
+    pthread_mutex_unlock(fluid_access);
+}
