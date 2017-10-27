@@ -17,6 +17,38 @@ pthread_t *fluid_thread = NULL;
 
 double reduce_factor = 5;
 
+unsigned char *raw_water_image_data = NULL;
+void fluid_waterColorAt(int x, int y,
+        int *r, int *g, int *b) {
+    double scale_w = 0.5;
+    double scale_h = 0.5;
+
+    if (raw_water_image_data == NULL) {
+        raw_water_image_data = malloc(
+            3 * water->w * water->h);
+        if (!raw_water_image_data) {
+            *r = 0;
+            *g = 0;
+            *b = 0;
+            return;
+        }
+        SDL_LockSurface(water);
+        memcpy(raw_water_image_data, water->pixels,
+            3 * water->w * water->h);
+        SDL_UnlockSurface(water);
+    }
+
+    int sampleX = ((int)((double)x * scale_w)) % water->w;
+    assert(sampleX >= 0 && sampleX < water->w);
+    int sampleY = ((int)((double)y * scale_h)) % water->h;
+    assert(sampleY >= 0 && sampleY < water->h);
+    int baseindex = (sampleX + sampleY * water->h) * 3;
+    
+    *r = (int)raw_water_image_data[baseindex + 0];
+    *g = (int)raw_water_image_data[baseindex + 1];
+    *b = (int)raw_water_image_data[baseindex + 2];
+}
+
 void _fluid_spawn(int type, int x, int y, double amount) {
     if (x < 0 || x >= fluid_map_x || y < 0 || y > fluid_map_y) return;
     assert(type >= 0 && type < FLUID_COUNT);
@@ -64,7 +96,15 @@ void fluid_drawIfThere(int type, int worldX, int worldY,
         fluid_checkWorld(type, x + 1, y + 1) * 0.5;
     alpha = alpha * alpha;
     if (alpha > 0.7) alpha = 0.7;
-    simulation_addPixel(drawx + drawy * xsize, 255, 0, 0, sqrt(alpha) * 255);
+    if (type == FLUID_WATER || 1) {
+        int r, g, b;
+        fluid_waterColorAt(drawx, drawy, &r, &g, &b);
+        simulation_addPixel(drawx + drawy * xsize,
+            r, g, b, sqrt(alpha) * 255); 
+    } else {
+        simulation_addPixel(drawx + drawy * xsize,
+            255, 0, 0, sqrt(alpha) * 255);
+    }
 }
 
 void fluid_drawAllIfThere(int x, int y, int xsize) {

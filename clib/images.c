@@ -274,6 +274,7 @@ SDL_Surface *images_duplicate(SDL_Surface *old) {
 }
 
 SDL_Surface *grass;
+SDL_Surface *water;
 
 char *raw_gradient_data = NULL;
 int gradient_x = 0;
@@ -284,12 +285,16 @@ void images_init() {
 
     IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
 
-    // Load gradient image:
+    // Load ground gradient image:
     raw_gradient_data = image_load_raw("images/gradient.png", 0, &gradient_x,
         &gradient_y);
     if (!raw_gradient_data) goto images_init_error;
 
+    // Load grass sprite:
     grass = image_load_converted("images/grass.png", 1);
+
+    // Load water tile image:
+    water = image_load_converted("images/water.png", 0);
 
     // Load particle images:
     if (!particle_loadImage(PARTICLE_GRASS, "images/grass.png")) {

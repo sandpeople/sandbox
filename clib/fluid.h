@@ -7,4 +7,6 @@ void fluid_spawn(int type, int x, int y, double amount);
 void fluid_randomSpawns();
 void fluid_drawAll(int xsize, int ysize);
 void fluid_resetAll();
+void fluid_waterColorAt(int x, int y,
+        int *r, int *g, int *b);
 

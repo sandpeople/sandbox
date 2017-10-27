@@ -1,6 +1,7 @@
 
 #include <SDL2/SDL_image.h>
 
+extern SDL_Surface *water;
 extern SDL_Surface *grass;
 extern char *raw_gradient_data;
 extern int gradient_x, gradient_y;
