@@ -177,7 +177,8 @@ void fluid_update(int type, int x, int y) {
             if (transfer > fluid_map[type][x + y * fluid_map_x] * 0.5) {
                 transfer = fluid_map[type][x + y * fluid_map_x] * 0.5;
             }
-            double amount = fmax(0.01 * ownAmount * fac, fmin((10.0 * reduce_factor) -
+            double amount = fmax(0.01 * ownAmount * fac,
+                fmin((10.0 * reduce_factor) -
                 fluid_map[type][target_x + target_y * fluid_map_x],
                 transfer));
             fluid_map[type][target_x + target_y * fluid_map_x] += amount;
@@ -208,7 +209,8 @@ void fluid_update(int type, int x, int y) {
             continue;
 
         // Transfer to around 1% of own amount:
-        double transfer = 0.2 * ownAmount / fmin(10.0 / reduce_factor, fabs(neighbor_x) + fabs(neighbor_y));
+        double transfer = 0.2 * ownAmount / fmin(10.0 / reduce_factor,
+            fabs(neighbor_x) + fabs(neighbor_y));
         transfer /= range;
 
         // Transfer target limit should be fmax(ownAmount, 10.0):
@@ -217,7 +219,8 @@ void fluid_update(int type, int x, int y) {
 
         // Do transfer and see how much we managed to transfer:
         double gone = fluid_tryTransfer(type, x + neighbor_x,
-            y + neighbor_y, transfer, limit, fluid_map[type][x + y * fluid_map_x]);
+            y + neighbor_y, transfer, limit, fluid_map[type][x + y *
+            fluid_map_x]);
 
         // Reduce transferred fluid from ourselves:
         fluid_map[type][x + y * fluid_map_x] -= gone * miss_factor;
@@ -230,14 +233,44 @@ void fluid_randomSpawns() {
         double y = rand0to1();
         int fluid_x = x * fluid_map_x;
         int fluid_y = y * fluid_map_y;
-        _fluid_spawn(FLUID_WATER, fluid_x, fluid_y, (60.0 + rand0to1() * 10.0) / reduce_factor);
+        _fluid_spawn(FLUID_WATER, fluid_x, fluid_y, (60.0 +
+            rand0to1() * 10.0) / reduce_factor);
     }
 }
 
+uint64_t last_fluid_update = 0;
+
 void fluid_updateAll() {
+    // Spawn new water when something is above a certain height:
+    if (last_fluid_update + 350 < SDL_GetTicks()) {
+        last_fluid_update = SDL_GetTicks() + 200;
+        const int spawn_scan_width = 5;
+        const int spawn_scan_height = 5;
+        const int border_w = (int)(((double)topology_map_x) * 0.1);
+        const int border_h = (int)(((double)topology_map_y) * 0.1);
+        int x = border_w;
+        int y = border_h;
+        while (x < topology_map_x - border_w) {
+            y = border_h;
+            while (y < topology_map_y - border_h) {
+                double height = topology_heightAt(x, y);
+                
+                if (height > topology_getMaxPossibleHeight() * 0.95) {
+                    fluid_spawn(FLUID_WATER, x, y, 0.5);
+                }
+
+                y += spawn_scan_height;
+            }
+            x += spawn_scan_width;
+        }
+    }
+
+    // Check how many fluid updates we want to do:
 	int fluidUpdates = simulation_getFluidUpdateCount();
     if (fluidUpdates <= 0)
         return;
+
+    // Update all fluids:
     int x = 0;
     int y = 0;
 	pthread_mutex_lock(fluid_access);

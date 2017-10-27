@@ -70,9 +70,11 @@ static double _heightAt(int x, int y) {
 
 double topology_heightAt(int x, int y) {
     pthread_mutex_lock(topology_lock);
-    double result = _heightAt(x, y);
+    double height = ((double)(255 - _heightAt(x, y)) * config_heightScale + config_heightShift);
     pthread_mutex_unlock(topology_lock);
-    return result;
+    if (height < 0.0) height = 0.0;
+    if (height > 255.0) height = 255.0;
+    return height;
 }
 
 void topology_calculate_drift(int x, int y, double *vx, double *vy) {
@@ -185,6 +187,20 @@ double topology_scan_type(int type, int x, int y, int size) {
     }
     pthread_mutex_unlock(topology_lock);
     return positive / total;
+}
+
+double topology_getMaxPossibleHeight() {
+    double height = ((double)(255 - 0) * config_heightScale + config_heightShift);
+    if (height < 0.0) height = 0.0;
+    if (height > 255.0) height = 255.0;
+    return height;
+}
+
+double topology_getMinPossibleHeight() {
+    int height = ((double)(255 - 255) * config_heightScale + config_heightShift);
+    if (height < 0.0) height = 0.0;
+    if (height > 255.0) height = 255.0;
+    return height;
 }
 
 int get_topology(int x, int y) {

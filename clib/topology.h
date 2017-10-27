@@ -12,6 +12,9 @@ void topology_calculate_drift(int x, int y, double *vx, double *vy);
 double topology_heightAt(int x, int y);
 void topology_drawToSimImage(const uint8_t* depth_array, int xsize, int ysize);
 
+double topology_getMaxPossibleHeight();
+double topology_getMinPossibleHeight();
+
 #define TOPOLOGY_NONE 0
 #define TOPOLOGY_GRASS 1
 
