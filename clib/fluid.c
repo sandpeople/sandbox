@@ -17,7 +17,9 @@ pthread_t *fluid_thread = NULL;
 
 double reduce_factor = 5;
 
-unsigned char *raw_water_image_data = NULL;
+static int water_scroll_offset_x = 0;
+static int water_scroll_offset_y = 0;
+static unsigned char *raw_water_image_data = NULL;
 void fluid_waterColorAt(int x, int y,
         int *r, int *g, int *b) {
     double scale_w = 0.5;
@@ -38,10 +40,20 @@ void fluid_waterColorAt(int x, int y,
         SDL_UnlockSurface(water);
     }
 
-    int sampleX = ((int)((double)x * scale_w)) % water->w;
-    assert(sampleX >= 0 && sampleX < water->w);
-    int sampleY = ((int)((double)y * scale_h)) % water->h;
-    assert(sampleY >= 0 && sampleY < water->h);
+    int sampleX = ((int)((double)x * scale_w));
+    if (sampleX < 0) {
+        sampleX = water->w - ((-sampleX) % water->w);
+    } else {
+        sampleX = sampleX % water->w;
+    }
+    assert(sampleX >= 0 && sampleX <= water->w);
+    int sampleY = ((int)((double)y * scale_h)); 
+    if (sampleY < 0) { 
+        sampleY = water->h - ((-sampleY) % water->h);
+    } else {
+        sampleY = sampleY % water->h;
+    }
+    assert(sampleY >= 0 && sampleY <= water->h);
     int baseindex = (sampleX + sampleY * water->h) * 3;
     
     *r = (int)raw_water_image_data[baseindex + 0];
@@ -98,7 +110,14 @@ void fluid_drawIfThere(int type, int worldX, int worldY,
     if (alpha > 0.7) alpha = 0.7;
     if (type == FLUID_WATER || 1) {
         int r, g, b;
-        fluid_waterColorAt(drawx, drawy, &r, &g, &b);
+        int r2, g2, b2;
+        fluid_waterColorAt(drawx + water_scroll_offset_x,
+            drawy + water_scroll_offset_y, &r, &g, &b);
+        fluid_waterColorAt(-drawx + water_scroll_offset_x,
+            drawy + water_scroll_offset_y, &r2, &g2, &b2);
+        r = (int)((double)r + r + r2) / 3.0;
+        g = (int)((double)g + g + g2) / 3.0;
+        b = (int)((double)b + b + b2) / 3.0;
         simulation_addPixel(drawx + drawy * xsize,
             r, g, b, sqrt(alpha) * 255); 
     } else {
@@ -279,8 +298,20 @@ void fluid_randomSpawns() {
 }
 
 uint64_t last_fluid_update = 0;
+uint64_t last_water_scroll = 0;
 
 void fluid_updateAll() {
+    while (last_water_scroll < SDL_GetTicks()) {
+        water_scroll_offset_x += 1;
+        water_scroll_offset_y += 1;
+        last_water_scroll += 150;
+
+        // Make sure we catch up:
+        if (last_water_scroll + 2000 < SDL_GetTicks()) {
+            last_water_scroll = SDL_GetTicks();
+        }
+    }
+
     // Spawn new water when something is above a certain height:
     if (last_fluid_update + 350 < SDL_GetTicks()) {
         last_fluid_update = SDL_GetTicks() + 200;
