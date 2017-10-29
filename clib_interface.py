@@ -74,6 +74,12 @@ def spawn_water(pos_x, pos_y):
     spawn_water.restype = None
     spawn_water(pos_x, pos_y)
 
-
+def shutdown():
+    global lib
+    if lib == None:
+        lib = ctypes.cdll.LoadLibrary('./libclib.so')
+    stop = lib.interface_stop
+    stop.restype = None
+    stop()
 
 

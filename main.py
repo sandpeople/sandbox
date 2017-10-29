@@ -215,6 +215,7 @@ while run is True:
    
     key = (cv2.waitKey(10) % 256)
     if key == 27: # Escape (Quit)
+        clib_interface.shutdown()
         sys.exit(0)
     elif key == 65480 or key == 102: # F11 / F (toggle fullscreen)
         # Toggle fullscreen:

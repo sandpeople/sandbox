@@ -6,3 +6,5 @@ void interface_mapOffset(double x, double y);
 
 void interface_resetWater();
 
+void interface_stop();
+
