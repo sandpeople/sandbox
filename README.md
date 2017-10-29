@@ -42,6 +42,8 @@ Afterwards, launch the program with:
 - X: enter map zoom adjustment mode. Click and drag with mouse to adjust
   (for projection image calibration)
 
+- W: reset all Water
+
 ## Cron for automatic updates
 
 We use a cronjob for automatic updates.
