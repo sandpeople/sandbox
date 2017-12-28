@@ -4,8 +4,16 @@
 
 #include <stdint.h>
 
-SDL_Renderer *simulation_getRenderer();
+// Initialize simulation with the given internal world render size:
 void simulation_initialize(int width, int height);
+
+// Various functions to get internal basic context stuff:
+SDL_Renderer *simulation_getRenderer();
+SDL_Window *simulation_getWindow();
+void simulation_copyRendererToSurface(SDL_Surface *w);
+SDL_GLContext *simulation_getGLContext();
+
+// Various specific stuff to our game:
 void simulation_drawBeforeWater();
 void simulation_drawAfterWater();
 void simulation_finalRenderToArray(uint8_t *render_data,

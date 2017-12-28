@@ -21,9 +21,22 @@ static const int renderTransformGridY = 10;
 struct rendergrid *renderTransformGrid = NULL;
 SDL_Window *hiddenWindow = NULL;
 SDL_Renderer *acceleratedRenderer = NULL;
+SDL_GLContext *simulationGLContext;
+
+SDL_GLContext *simulation_getGLContext() {
+    return simulationGLContext;
+}
 
 SDL_Renderer *simulation_getRenderer() {
     return acceleratedRenderer;
+}
+
+static uint32_t format = SDL_PIXELFORMAT_RGBA8888;
+void simulation_copyRendererToSurface(SDL_Surface *w) {
+    SDL_Rect dst = {0, 0, w->w, w->h};
+    int result = SDL_RenderReadPixels(simulation_getRenderer(),
+        &dst, format, w->pixels, w->pitch);
+    assert(result == 0);
 }
 
 static int simulation_surface_locked = 0;
@@ -37,8 +50,9 @@ void simulation_initialize(int width, int height) {
 
     glewExperimental = GL_TRUE;
     glewInit();
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 0);
 
     hiddenWindow = SDL_CreateWindow(

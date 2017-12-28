@@ -1,4 +1,5 @@
 
+#include <GL/glew.h>
 #include "multiimgrotator.h"
 
 static int last_id = -1;
@@ -11,8 +12,42 @@ struct imageinfo {
     double offset_x, offset_y, offset_z;
     double rotation_x, rotation_y, rotation_z;
     struct imageinfo *next, *prev;
+
+    int vbooutdated;
+    int vboset;
+    GLuint VBObufId;
+    GLuint IBObufId;
 };
 struct imageinfo *images = NULL;
+
+void multiimgrotator_UpdateVBO(struct imageinfo *iinfo) {
+    if (!iinfo->vbooutdated && iinfo->vboset)
+        return;
+
+    if (iinfo->vboset) {
+        // Remove old buffer:
+        glDeleteBuffers(1, &iinfo->VBObufId);
+        glDeleteBuffers(1, &iinfo->IBObufId);
+    }
+
+    // Vertex positions:
+    GLfloat vertexPositions[8];
+
+    // UV positions:
+
+    // Index numbers for polygons:
+    GLuint indices[] = { 0, 1, 2, 3 };
+
+    iinfo->vboset = 1;
+    glGenBuffers(1, &iinfo->VBObufId);
+    glBindBuffer(GL_ARRAY_BUFFER, iinfo->VBObufId);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions,
+        GL_STATIC_DRAW);
+    glGenBuffers(1, &iinfo->IBObufId);
+    glBindBuffer(GL_ARRAY_BUFFER, iinfo->IBObufId);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
+        GL_STATIC_DRAW);
+}
 
 int multiimgrotator_AddImage(size_t w, size_t h) {
     // Get new id:
@@ -20,10 +55,10 @@ int multiimgrotator_AddImage(size_t w, size_t h) {
     last_id++;
 
     // Add image to list:
-    struct imageinfo *iinfo = malloc(sizeof(*info));
+    struct imageinfo *iinfo = malloc(sizeof(*iinfo));
     memset(iinfo, 0, sizeof(*iinfo));
     iinfo->scale_x = 1.0;
-    iinfo->scale_y = 1.0
+    iinfo->scale_y = 1.0;
     iinfo->w = w;
     iinfo->h = h;
     iinfo->id = id;
@@ -45,7 +80,7 @@ void multiimgrotator_ScaleImage(int id, double scale_x, double scale_y) {
                 scale_y = 0.00001;
             }
             iinfo->scale_x = scale_x;
-            iinfo->scale_y = sclae_y;
+            iinfo->scale_y = scale_y;
             return;
         }
         iinfo = iinfo->next;
@@ -76,7 +111,7 @@ void multiimgrotator_TranslateImage(int id,
     } 
 }
 
-void multimgrotator_RemoveImage(int id) {
+void multiimgrotator_RemoveImage(int id) {
     struct imageinfo *iinfo = images;
     while (iinfo != NULL) { 
         if (iinfo->id == id) {
@@ -93,6 +128,26 @@ void multimgrotator_RemoveImage(int id) {
         }
         iinfo = iinfo->next;
     }
+}
+
+static GLuint drawShadersProgramID = 0;
+static GLint vertexPos2DLocation = -1;
+static int draw_initialized = 0;
+void multiimgrotator_InitDraw() {
+    if (draw_initialized)
+        return;
+
+    draw_initialized = 1;
+
+    
+}
+
+void multiimgrotator_Draw() {
+    // Prepare window:
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Render images with all transformations applied:
+     
 }
 
 
