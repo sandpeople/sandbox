@@ -9,6 +9,7 @@
 
 #include "fluid.h"
 #include "images.h"
+#include "interface.h"
 #include "multiimgrotator.h"
 #include "simulation.h"
 #include "topology.h"
@@ -25,6 +26,14 @@ static int xsize, ysize;
 
 static pthread_mutex_t *main_compute_data_access = NULL;
 static pthread_t *main_compute_thread = NULL;
+
+struct imginput {
+    struct inputconfig config;
+    void *pixels;
+    int imgid;
+};
+struct imginput* inputs = NULL;
+size_t inputs_amount = 0;
 
 static void *interface_mainComputeThread(
             __attribute__((unused)) void *userdata
@@ -184,4 +193,56 @@ void interface_spawnWater(double x, double y) {
 void interface_resetWater() {
     fluid_resetAll();    
 }
+
+void interface_setInputAmount(int size) {
+    if (size == 0) {
+        free(inputs);
+        inputs = 0;
+    }
+    struct imginput *newinputs = realloc(inputs, sizeof(*inputs) * size);
+    if (!newinputs) {
+        free(inputs);
+        fprintf(stderr, "clib/interface.c: error: input allocation failed\n");
+        fflush(stderr);
+        return;
+    }
+    inputs = newinputs;
+    for (size_t i = inputs_amount; i < (size_t)size; i++) {
+        memset(&inputs[i], 0, sizeof(inputs[i]));
+    }
+    inputs_amount = size;
+}
+
+void interface_setConfig(int number, const struct inputconfig* config) {
+    if (number < 0 || (size_t)number >= inputs_amount) {
+        fprintf(stderr, "clib/interface.c: critical programming error: "
+            "interface_setConfig on invalid input number");
+        fflush(stderr);
+        return;
+    }
+    size_t old_w = inputs[number].config.w;
+    size_t old_h = inputs[number].config.h;
+    if (inputs[number].pixels != NULL &&
+            (old_w != config->w || old_h != config->h)) {
+        free(inputs[number].pixels);
+        inputs[number].pixels = NULL;
+    }
+    memmove(&inputs[number].config, config, sizeof(*config));
+}
+
+void interface_setInputImg(int number, const void *data) {
+    if (number < 0 || (size_t)number >= inputs_amount) {
+        fprintf(stderr, "clib/interface.c: critical programming error: "
+            "interface_setInputImg on invalid input number");
+        fflush(stderr);
+        return;
+    }
+    if (inputs[number].pixels == NULL) {
+        inputs[number].pixels = malloc(inputs[number].config.w *
+            inputs[number].config.h * 1);
+    }
+    memcpy(inputs[number].pixels, data, inputs[number].config.w *
+        inputs[number].config.h * 1);
+}
+
 

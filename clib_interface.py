@@ -61,8 +61,34 @@ class SandboxSimulation(object):
             pass
 
     def set_input_config(self, inputs):
+        class InputConfigStruct(Structure):
+            _fields_ = [("w", ctypes.c_size_t),
+                        ("h", ctypes.c_size_t),
+                        ("world_x", ctypes.c_double),
+                        ("world_y", ctypes.c_double),
+                        ("world_z", ctypes.c_double),
+                        ("size_w", ctypes.c_double),
+                        ("size_h", ctypes.c_double),
+                        ("rotation_x", ctypes.c_double),
+                        ("rotation_y", ctypes.c_double),
+                        ("rotation_z", ctypes.c_double),
+                        ("height_shift", ctypes.c_double),
+                        ("height_scale", ctypes.c_double)]
+
         self.lib.interface_setInputCount(len(inputs))
         for input_config in self._inputs:
+            config = InputConfigStruct()
+            config.w = input_config.w
+            config.h = input_config.h
+            config.height_scale = input_config.height_scale
+            config.height_shift = input_config.height_shift
+            config.world_x = input_config.world_pos_x
+            config.world_y = input_config.world_pos_y
+            config.world_z = input_config.world_pos_z
+            config.size_w = input_config.world_width
+            config.size_h = input_config.world_height
+            config.height_shift = input_config.height_shift
+            config.height_scale = input_config.height_scale
             set_height_config = self.lib.interface_setInputHeightConfig
             set_height_config.argtypes = [ctypes.c_double, ctypes.c_double]
             set_height_config.restype = None
