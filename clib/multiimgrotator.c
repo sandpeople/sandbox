@@ -1,5 +1,8 @@
 
+#include <float.h>
 #include <GL/glew.h>
+#include <limits.h>
+
 #include "multiimgrotator.h"
 
 static int last_id = -1;
@@ -18,14 +21,53 @@ struct imageinfo {
     GLuint VBObufId;
     GLuint IBObufId;
 };
-struct imageinfo *images = NULL;
+static struct imageinfo *images = NULL;
+
+void multiimgrotator_WorldBoundaries(
+        double *x_min_output, double *x_max_output,
+        double *y_min_output, double *y_max_output,
+        double* z_min_output, double *z_max_output) {
+    double x_min = DBL_MAX;
+    double x_max = DBL_MIN;
+    double y_min = DBL_MAX;
+    double y_max = DBL_MIN;
+    double z_min = DBL_MAX;
+    double z_max = DBL_MIN;
+
+    int atleastoneimage = 0;
+    struct imageinfo *iinfo = images;
+    while (iinfo != NULL) {
+        atleastoneimage = 1;
+        
+        iinfo = iinfo->next;
+    }
+
+    if (!atleastoneimage) {
+        *x_min_output = -0.5;
+        *x_max_output = 0.5;
+        *y_min_output = -0.5;
+        *y_max_output = 0.5;
+        *z_min_output = -0.5;
+        *z_max_output = 0.5;
+        return;
+    }
+}
+
+void multiimgrotator_FreeImage(struct imageinfo *iinfo) {
+    if (iinfo->vboset) {
+        // Remove old buffers:
+        glDeleteBuffers(1, &iinfo->VBObufId);
+        glDeleteBuffers(1, &iinfo->IBObufId);
+    }
+    free(iinfo);
+}
 
 void multiimgrotator_UpdateVBO(struct imageinfo *iinfo) {
     if (!iinfo->vbooutdated && iinfo->vboset)
         return;
 
     if (iinfo->vboset) {
-        // Remove old buffer:
+        // Remove old buffers:
         glDeleteBuffers(1, &iinfo->VBObufId);
         glDeleteBuffers(1, &iinfo->IBObufId);
     }
@@ -38,6 +80,7 @@ void multiimgrotator_UpdateVBO(struct imageinfo *iinfo) {
     // Index numbers for polygons:
     GLuint indices[] = { 0, 1, 2, 3 };
 
+    iinfo->vbooutdated = 0;
     iinfo->vboset = 1;
     glGenBuffers(1, &iinfo->VBObufId);
     glBindBuffer(GL_ARRAY_BUFFER, iinfo->VBObufId);
@@ -105,6 +148,7 @@ void multiimgrotator_TranslateImage(int id,
             iinfo->rotation_x = rotation_euler_x;
             iinfo->rotation_y = rotation_euler_y;
             iinfo->rotation_z = rotation_euler_z;
+            iinfo->vbooutdated = 1;
             return;
         }
         iinfo = iinfo->next;
@@ -123,7 +167,7 @@ void multiimgrotator_RemoveImage(int id) {
             } else {
                 images = iinfo->next;
             }
-            free(iinfo);
+            multiimgrotator_FreeImage(iinfo);
             return;
         }
         iinfo = iinfo->next;
