@@ -40,11 +40,14 @@ class sandcontrol(object):
         if not self.pqueue.empty():
             try:
                 cv2.imwrite('webroot/map.jpg', self.pqueue.get(block=False), [int(cv2.IMWRITE_JPEG_QUALITY), 10])
+                self.picture = None
             except:
                 pass
 
-        with open("webroot/map.jpg") as f:
-            return f.read()
+        if not self.picture:
+            with open("webroot/map.jpg") as f:
+                self.picture = f.read()
+        return self.picture
 
 
     def launch_control(self, queue):
