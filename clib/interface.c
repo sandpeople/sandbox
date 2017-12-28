@@ -213,7 +213,7 @@ void interface_setInputAmount(int size) {
     inputs_amount = size;
 }
 
-void interface_setConfig(int number, const struct inputconfig* config) {
+void interface_setInputConfig(int number, const struct inputconfig* config) {
     if (number < 0 || (size_t)number >= inputs_amount) {
         fprintf(stderr, "clib/interface.c: critical programming error: "
             "interface_setConfig on invalid input number");

@@ -36,7 +36,12 @@ class SandboxSimulation(object):
         self._inputs = []
         self._outputs = []
         self.interface_run = self.lib.interface_run
+        self.interface_run.argtypes = []
         self.interface_run.restype = None
+        self.interface_setInputImg = self.lib.interface_setInputImg
+        self.interface_setInputImg.argtypes = [
+            ctypes.c_int, ctypes.c_void_p]
+        self.interface_setInputImg.restype = None
 
     def simulate(self, input_depth_images):
         if len(input_depth_images) != len(self._inputs):
@@ -47,14 +52,16 @@ class SandboxSimulation(object):
                 "accordingly before calling this")
 
         # Set input images:
+        index = -1
         for input_config in self._inputs:
-            pass
+            index += 1
+            assert(input_config.w == input_depth_images[index].shape[0])
+            assert(input_config.h == input_depth_images[index].shape[1])
+            self.interface_setInputImg(index,
+                ctypes.c_void_p(input_depth_images[index].ctypes.data))
 
         # Call simulation:
-        self.interface_run(ctypes.c_void_p(input_depth_image.ctypes.data),
-            ctypes.c_int(input_depth_image.shape[0]),
-            ctypes.c_int(input_depth_image.shape[1]),
-            ctypes.c_void_p(output_color_image.ctypes.data))
+        self.interface_run()
 
         # Get outputs:
         for output_config in self._outputs:
@@ -75,8 +82,13 @@ class SandboxSimulation(object):
                         ("height_shift", ctypes.c_double),
                         ("height_scale", ctypes.c_double)]
 
-        self.lib.interface_setInputCount(len(inputs))
+        set_input_amount = self.lib.interface_setInputAmount
+        set_input_amount.argtypes = [ctypes.c_int]
+        set_input_amount.restype = None
+        set_input_amount(len(inputs))
+        index = -1
         for input_config in self._inputs:
+            index += 1
             config = InputConfigStruct()
             config.w = input_config.w
             config.h = input_config.h
@@ -89,10 +101,11 @@ class SandboxSimulation(object):
             config.size_h = input_config.world_height
             config.height_shift = input_config.height_shift
             config.height_scale = input_config.height_scale
-            set_height_config = self.lib.interface_setInputHeightConfig
-            set_height_config.argtypes = [ctypes.c_double, ctypes.c_double]
-            set_height_config.restype = None
-            set_height_config(input_config.height_shift, input_config.height_scale)
+            set_config = self.lib.interface_setInputConfig
+            set_config.argtypes = [ctypes.c_int,
+                ctypes.POINTER(InputConfigStruct)]
+            set_config.restype = None
+            set_config(index, ctypes.POINTER(config))
 
     def set_output_config(self, outputs):
         pass
