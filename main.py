@@ -136,26 +136,9 @@ while run is True:
             cv2.namedWindow('Beamer Image', winnormal_const)
             cv2.setWindowProperty("Beamer Image", cv2.WND_PROP_FULLSCREEN,
                 fullscreen_const)
-            cv2.setMouseCallback('Beamer Image', mouse_handling)
     elif key == 119: # W (reset water)
         print("RESET WATER")
         clib_interface.reset_water() 
-    elif key == 99: # C (calibration with dragging)
-        if not calibration_drag:
-            calibration_zoom = False
-            calibration_drag = True
-            print("CALIBRATION <<ON>>")
-        else:
-            calibration_drag = False
-            print("CALIBRATION <<OFF>>")
-    elif key == 120: # X (calibration with zooming)
-        if not calibration_zoom:
-            calibration_zoom = True
-            calibration_drag = False
-            print("ZOOM CALIBRATION <<ON>>")
-        else:
-            calibration_zoom = False
-            print("ZOOM CALIBRATION <<OFF>>")
     elif key > 0 and key < 255:
         print("UNKNOWN KEY: " + str(key))
     
