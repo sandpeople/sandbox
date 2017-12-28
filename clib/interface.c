@@ -9,6 +9,7 @@
 
 #include "fluid.h"
 #include "images.h"
+#include "multiimgrotator.h"
 #include "simulation.h"
 #include "topology.h"
 
@@ -34,6 +35,9 @@ static void *interface_mainComputeThread(
         memcpy(depth_array_buf, _depth_input_transfer_buf,
             xsize * ysize * 1);
         pthread_mutex_unlock(main_compute_data_access);
+
+        // Draw depth input data properly:
+        multiimgrotator_Draw();
 
         // Make sure everything is initialized:
         simulation_initialize(xsize, ysize);

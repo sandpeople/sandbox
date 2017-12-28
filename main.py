@@ -49,9 +49,10 @@ map_offset_x = 0.0
 map_offset_y = 0.0
 map_zoom = 1.0
 
-clib_interface.set_height_config(height_shift, height_scale)
-clib_interface.reset_map_drag()
-clib_interface.drag_map(map_offset_x, map_offset_y)
+sandbox_sim = clib_interface.SandboxSimulation()
+sandbox_sim.set_height_config(height_shift, height_scale)
+sandbox_sim.reset_map_drag()
+sandbox_sim.drag_map(map_offset_x, map_offset_y)
 
 # Compute proper fullscreen constants for openCV version:
 fullscreen_const = None
@@ -105,7 +106,7 @@ while run is True:
     img = get_image()
 
     # Call C code for simulation:
-    clib_interface.simulate(img, cimg)
+    sandbox_sim.simulate(img, cimg)
 
     # Ensure right resolution:
     resized = cv2.resize(cimg, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
@@ -120,7 +121,7 @@ while run is True:
    
     key = (cv2.waitKey(10) % 256)
     if key == 27: # Escape (Quit)
-        clib_interface.shutdown()
+        sandbox_sim.shutdown()
         sys.exit(0)
     elif key == 65480 or key == 102: # F11 / F (toggle fullscreen)
         # Toggle fullscreen:
@@ -138,7 +139,7 @@ while run is True:
                 fullscreen_const)
     elif key == 119: # W (reset water)
         print("RESET WATER")
-        clib_interface.reset_water() 
+        sandbox_sim.reset_water() 
     elif key > 0 and key < 255:
         print("UNKNOWN KEY: " + str(key))
     
