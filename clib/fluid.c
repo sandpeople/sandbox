@@ -61,6 +61,36 @@ void fluid_waterColorAt(int x, int y,
     *b = (int)raw_water_image_data[baseindex + 2];
 }
 
+double fluid_getCoverage(int type) {
+    int detail_steps = 20;
+    double coverage_raw = 0.0;
+    double coverage_max = (detail_steps * detail_steps);
+    double step_x_width = (fluid_map_x / detail_steps);
+    double step_y_width = (fluid_map_y / detail_steps);
+    int x_step = 0;
+    while (x_step < detail_steps) {
+        int y_step = 0;
+        while (y_step < detail_steps) {
+            int x = step_x_width * x_step;
+            if (x >= fluid_map_x)
+                x = fluid_map_x - 1;
+            int y = step_y_width * y_step;
+            if (y >= fluid_map_y)
+                y = fluid_map_y - 1;
+
+            double fluid_amount = fluid_map[type][x + y * fluid_map_x];
+            if (fluid_amount > 2.0)
+                fluid_amount = 2.0;
+            coverage_raw += fluid_amount / 2.0;
+
+            y_step++;
+        }
+        x_step++;
+    }
+
+    return (coverage_raw / coverage_max);
+}
+
 void _fluid_spawn(int type, int x, int y, double amount) {
     if (x < 0 || x >= fluid_map_x || y < 0 || y > fluid_map_y) return;
     assert(type >= 0 && type < FLUID_COUNT);
@@ -429,3 +459,37 @@ void fluid_resetAll() {
     }
     pthread_mutex_unlock(fluid_access);
 }
+
+uint64_t autodrain_ts = 0;
+void fluid_autoDrain() {
+    pthread_mutex_lock(fluid_access);
+
+    // Make sure timestamp doesn't fall too far behind:
+    if (autodrain_ts + 5000 < SDL_GetTicks())
+        autodrain_ts = SDL_GetTicks();
+
+    // Drain the fluids where necessary:
+    size_t steps = (SDL_GetTicks() - autodrain_ts) / 200;
+    if (steps > 0) {
+        for (int type = 0; type < FLUID_COUNT; type++) {
+            double coverage = fluid_getCoverage(type);
+            if (coverage > 0.4) {
+                for (size_t i = 0; i < steps; i++) {
+                    for (size_t k = 0; k < 10; k++) {
+                        int xpos = (rand0to1() * ((double)fluid_map_x));
+                        if (xpos >= fluid_map_x)
+                            xpos = fluid_map_x - 1;
+                        int ypos = (rand0to1() * ((double)fluid_map_y));
+                        if (ypos >= fluid_map_y)
+                            ypos = fluid_map_y - 1;
+                        fluid_map[type][xpos + ypos * fluid_map_x] = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    pthread_mutex_unlock(fluid_access);
+}
+
+

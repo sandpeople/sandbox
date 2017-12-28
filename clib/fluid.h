@@ -9,4 +9,6 @@ void fluid_drawAll(int xsize, int ysize);
 void fluid_resetAll();
 void fluid_waterColorAt(int x, int y,
         int *r, int *g, int *b);
+double fluid_getCoverage(int type);
+void fluid_autoDrain();
 

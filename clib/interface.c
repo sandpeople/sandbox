@@ -55,6 +55,7 @@ static void *interface_mainComputeThread(
         simulation_lockSurface();
         assert(simulation_isSurfaceLocked());
         fluid_drawAll(xsize, ysize);
+        fluid_autoDrain();
 
         simulation_updateMovingObjects();
         simulation_unlockSurface();
