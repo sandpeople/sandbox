@@ -103,6 +103,7 @@ static void *interface_mainComputeThread(
     return NULL;
 }
 
+static SDL_Surface *transfer_srf = NULL;
 void interface_run(const void *depth_array_v, void *output_colors_v) {
 
     int _xsize = 1024;
@@ -152,7 +153,22 @@ void interface_run(const void *depth_array_v, void *output_colors_v) {
         return;
     }
     pthread_mutex_lock(main_compute_data_access);
-    memcpy(_depth_input_transfer_buf, depth_array_v, xsize * ysize);
+
+    // Compute and render input depth image:
+    multiimgrotator_Draw();
+    if (transfer_srf) {
+        transfer_srf = SDL_CreateRGBSurfaceWithFormat(
+            0, _xsize, _ysize, 0, SDL_PIXELFORMAT_RGBA8888);
+    }
+    simulation_copyRendererToSurface(&transfer_srf);
+    for (size_t x = 0; x < _xsize; x++) {
+        for (size_t y = 0; y < _ysize; y++) {
+            _depth_input_transfer_buf[x + y * _xsize] = transfer_srf[
+                (x + y * _xsize) * 4];
+        }
+    }
+    
+    // Transfer output colors from last frame: 
     memcpy(output_colors_v, _color_output_transfer_buf, xsize * ysize * 3);
     pthread_mutex_unlock(main_compute_data_access);
 }
