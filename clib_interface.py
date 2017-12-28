@@ -2,27 +2,74 @@
 import ctypes
 import os
 
+class SandboxInputConfig(object):
+    def __init__(self, size_x, size_y, height_shift, height_scale):
+        self.w = size_x
+        self.h = size_y
+        self.height_shift = height_shift
+        self.height_scale = height_scale
+        self.world_pos_x = 0.0
+        self.world_pos_y = 0.0
+        self.world_pos_z = 0.0
+        self.world_width = 1.0
+        self.world_height = 1.0
+        self.world_rotation_x = 0.0
+        self.world_rotation_y = 0.0
+        self.world_rotation_z = 0.0
+
+class SandboxOutputConfig(object):
+    def __init__(self, output_w, output_h):
+        self.w = output_w
+        self.h = output_h
+        self.world_pos_x = 0.0
+        self.world_pos_y = 1.0
+        self.world_pos_z = 1.0
+        self.ground_plane_world_distance = 1.0
+        self.ground_plane_world_width = 1.0
+        self.ground_plane_world_height = 1.0
+
 class SandboxSimulation(object):
     def __init__(self):
         self.lib = ctypes.cdll.LoadLibrary(
             os.path.join(os.path.abspath(
                 os.path.dirname(__file__)), "libclib.so"))
+        self._inputs = []
+        self._outputs = []
+        self.interface_run = self.lib.interface_run
+        self.interface_run.restype = None
 
-    def simulate(self, input_depth_image, output_color_image):
-        interface_run = self.lib.interface_run
-        interface_run.restype = None
-        
-        # call simulation:
-        interface_run(ctypes.c_void_p(input_depth_image.ctypes.data),
+    def simulate(self, input_depth_images):
+        if len(input_depth_images) != len(self._inputs):
+            raise ValueError("the provided amount of depth images is " +
+                str(len(input_depth_images)) + ", but the amount of " +
+                "inputs is currently " + str(len(self._inputs)) +
+                ". use set_input_config() to configure your inputs " +
+                "accordingly before calling this")
+
+        # Set input images:
+        for input_config in self._inputs:
+            pass
+
+        # Call simulation:
+        self.interface_run(ctypes.c_void_p(input_depth_image.ctypes.data),
             ctypes.c_int(input_depth_image.shape[0]),
             ctypes.c_int(input_depth_image.shape[1]),
             ctypes.c_void_p(output_color_image.ctypes.data))
 
-    def set_height_config(self, height_shift, height_scale):
-        set_height_config = self.lib.interface_setHeightConfig
-        set_height_config.argtypes = [ctypes.c_double, ctypes.c_double]
-        set_height_config.restype = None
-        set_height_config(height_shift, height_scale)
+        # Get outputs:
+        for output_config in self._outputs:
+            pass
+
+    def set_input_config(self, inputs):
+        self.lib.interface_setInputCount(len(inputs))
+        for input_config in self._inputs:
+            set_height_config = self.lib.interface_setInputHeightConfig
+            set_height_config.argtypes = [ctypes.c_double, ctypes.c_double]
+            set_height_config.restype = None
+            set_height_config(input_config.height_shift, input_config.height_scale)
+
+    def set_output_config(self, outputs):
+        pass
 
     def drag_map(self, x, y):
         interface_mapOffset = self.lib.interface_mapOffset

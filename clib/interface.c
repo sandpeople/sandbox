@@ -94,10 +94,11 @@ static void *interface_mainComputeThread(
     return NULL;
 }
 
-void interface_run(
-        const void *depth_array_v,
-        int _xsize, int _ysize,
-        void *output_colors_v) {
+void interface_run(const void *depth_array_v, void *output_colors_v) {
+
+    int _xsize = 1024;
+    int _ysize = 768;
+
     // Initialize all the data buffers we need:
     if (!_depth_input_transfer_buf) {
         _depth_input_transfer_buf = malloc(_xsize * _ysize);
