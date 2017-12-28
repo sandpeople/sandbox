@@ -160,13 +160,16 @@ void interface_run(const void *depth_array_v, void *output_colors_v) {
         transfer_srf = SDL_CreateRGBSurfaceWithFormat(
             0, _xsize, _ysize, 0, SDL_PIXELFORMAT_RGBA8888);
     }
-    simulation_copyRendererToSurface(&transfer_srf);
-    for (size_t x = 0; x < _xsize; x++) {
-        for (size_t y = 0; y < _ysize; y++) {
-            _depth_input_transfer_buf[x + y * _xsize] = transfer_srf[
+    simulation_copyRendererToSurface(transfer_srf);
+    SDL_LockSurface(transfer_srf);
+    for (int x = 0; x < _xsize; x++) {
+        for (int y = 0; y < _ysize; y++) {
+            _depth_input_transfer_buf[x + y * _xsize] =
+                ((char*)transfer_srf->pixels)[
                 (x + y * _xsize) * 4];
         }
     }
+    SDL_FreeSurface(transfer_srf);
     
     // Transfer output colors from last frame: 
     memcpy(output_colors_v, _color_output_transfer_buf, xsize * ysize * 3);
