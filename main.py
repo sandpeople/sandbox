@@ -20,7 +20,6 @@
 
 from freenect import sync_get_depth
 import ConfigParser as configparser
-import cv2 
 import numpy as np
 import frame_convert
 import sys
@@ -29,6 +28,7 @@ import server
 import os
 import pickle
 import threading
+from PIL import Image
 from Queue import Queue
 
 enable_http=True
@@ -36,7 +36,7 @@ enable_http=True
 pqueue=Queue(maxsize=1)
 
 if enable_http:
-    server=server.sandcontrol(queue=pqueue)
+    server=server.sandcontrol(pqueue=pqueue)
     serverd=threading.Thread(target = server.launch_control, args=(pqueue,))
     serverd.daemon = True
     serverd.start()
@@ -53,24 +53,6 @@ sandbox_sim = clib_interface.SandboxSimulation()
 sandbox_sim.set_height_config(height_shift, height_scale)
 sandbox_sim.reset_map_drag()
 sandbox_sim.drag_map(map_offset_x, map_offset_y)
-
-# Compute proper fullscreen constants for openCV version:
-fullscreen_const = None
-winnormal_const = None
-try:
-    fullscreen_const = cv2.cv.CV_WINDOW_FULLSCREEN
-    winnormal_const = cv2.cv.CV_WINDOW_NORMAL
-except AttributeError:
-    fullscreen_const = cv2.WINDOW_FULLSCREEN
-    winnormal_const = cv2.WINDOW_NORMAL
-
-
-run=True
-gradient=cv2.imread('gradient.bmp',1)
-cv2.namedWindow('Beamer Image', cv2.WINDOW_NORMAL)
-cv2.setWindowProperty('Beamer Image', cv2.WND_PROP_FULLSCREEN,
-    fullscreen_const)
-fullscreen = True
 
 def get_depth():
     """ This function obtains the depth image from the kinect, if any is
@@ -94,12 +76,14 @@ def get_image():
         img = get_depth()
     else:
         # Apparently, no kinect around. take static test image instead:
-        img = cv2.imread('images/kinect.png', 0)
+        img = Image.open('images/kinect.png')
     return img
 
 # Create cimg buffer in according format:
 img = get_image()
-cimg = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+cimg = Image.new("L", (screen_resolution_x,screen_resolution_y), color=0)
+
+run=True
 
 while run is True:
     # Take kinect image if we have one:
@@ -108,12 +92,9 @@ while run is True:
     # Call C code for simulation:
     sandbox_sim.simulate(img, cimg)
 
-    # Ensure right resolution:
-    resized = cv2.resize(cimg, (screen_resolution_x, screen_resolution_y), interpolation = cv2.INTER_AREA)
-
     if not pqueue.full():
         try:
-            pqueue.put(resized, block=False)
+            pqueue.put(cimg, block=False)
         except:
             pass
     cv2.imwrite('webroot/map.jpg', resized, [int(cv2.IMWRITE_JPEG_QUALITY), 10])
@@ -143,4 +124,3 @@ while run is True:
     elif key > 0 and key < 255:
         print("UNKNOWN KEY: " + str(key))
     
-
