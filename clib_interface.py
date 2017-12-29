@@ -67,6 +67,9 @@ class SandboxSimulation(object):
         for output_config in self._outputs:
             pass
 
+    def set_depth_images(self, images):
+        pass
+
     def set_input_config(self, inputs):
         class InputConfigStruct(Structure):
             _fields_ = [("w", ctypes.c_size_t),

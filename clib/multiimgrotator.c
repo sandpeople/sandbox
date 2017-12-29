@@ -24,10 +24,29 @@ struct imageinfo {
 
     int vbooutdated;
     int vboset;
+    GLuint VAObufId;
     GLuint VBObufId;
     GLuint IBObufId;
+
+    char *data;
+    int textureset;
+    GLuint texture; 
 };
 static struct imageinfo *images = NULL;
+
+void multiimgrotator_SetImageData(struct imageinfo *iinfo,
+        char *data) {
+    if (iinfo->data == NULL) {
+        iinfo->data = malloc(iinfo->w * iinfo->h * 1);
+        if (!iinfo->data)
+            return;
+    }
+    memcpy(iinfo->data, data, iinfo->w * iinfo->h * 1);
+    if (iinfo->textureset) {
+        glDeleteTextures(1, &iinfo->texture);
+    }
+    iinfo->textureset = 0; 
+}
 
 static void multiimgrotator_ComputeImageCornerPositions(
         struct imageinfo *iinfo,
@@ -188,6 +207,7 @@ void multiimgrotator_FreeImage(struct imageinfo *iinfo) {
         // Remove old buffers:
         glDeleteBuffers(1, &iinfo->VBObufId);
         glDeleteBuffers(1, &iinfo->IBObufId);
+        glDeleteVertexArrays(1, &iinfo->VAObufId);
     }
     free(iinfo);
 }
@@ -200,6 +220,7 @@ void multiimgrotator_UpdateVBO(struct imageinfo *iinfo) {
         // Remove old buffers:
         glDeleteBuffers(1, &iinfo->VBObufId);
         glDeleteBuffers(1, &iinfo->IBObufId);
+        glDeleteVertexArrays(1, &iinfo->VAObufId);
     }
 
     // Obtain world boundaries:
@@ -210,7 +231,6 @@ void multiimgrotator_UpdateVBO(struct imageinfo *iinfo) {
         &x_min, &x_max, &y_min, &y_max,
         &z_min, &z_max);
     double world_size_x = (x_max - x_min);
-    double world_size_y = (y_max - y_min);
     double world_size_z = (z_max - z_min);
 
     // Get positions in world space:
@@ -240,6 +260,8 @@ void multiimgrotator_UpdateVBO(struct imageinfo *iinfo) {
 
     iinfo->vbooutdated = 0;
     iinfo->vboset = 1;
+    glGenVertexArrays(1, &iinfo->VAObufId);
+    glBindVertexArray(iinfo->VAObufId);
     glGenBuffers(1, &iinfo->VBObufId);
     glBindBuffer(GL_ARRAY_BUFFER, iinfo->VBObufId);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions,
@@ -340,8 +362,10 @@ void multiimgrotator_RemoveImage(int id) {
     }
 }
 
-static GLuint drawShadersProgramID = 0;
-static GLint vertexPos2DLocation = -1;
+static GLint vertexPos2DAttrLocation = -1;
+static GLint UVattribAttrLocation = -1;
+static GLuint drawShadersProgramId = 0;
+static GLuint uniformShaderTexParam = -1;
 static int draw_initialized = 0;
 void multiimgrotator_InitDraw() {
     if (draw_initialized)
@@ -349,15 +373,112 @@ void multiimgrotator_InitDraw() {
 
     draw_initialized = 1;
 
-    
+    drawShadersProgramId = glCreateProgram();
+
+    GLuint vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
+    const char *vertexShaderProgram[] = { "version 140\n"
+        "in vec2 LVertexPos2D;\n"
+        "void main() {\n"
+        "    gl_Position = vec4(LVertexPos2D.x, LVertexPos2D.y, 0, 1);\n"
+        "}\n" };
+    glShaderSource(vertexShaderId, 1, vertexShaderProgram, NULL);
+    glCompileShader(vertexShaderId);
+    GLint shaderCompiled;
+    glGetShaderiv(vertexShaderId, GL_COMPILE_STATUS, &shaderCompiled);
+    if (shaderCompiled != GL_TRUE) {
+        fprintf(stderr, "clib/multiimgrotator.c: fatal error: "
+            "vertex shader compilation failed.");
+        exit(1);
+    }
+    glAttachShader(drawShadersProgramId, vertexShaderId);
+
+    GLuint fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
+    const char *fragmentShaderProgram[] = { "#version 330\n"
+        "uniform sampler2D texUnit;\n"
+        "in vec2 theCoords;\n"
+        "out vec4 outputColour;\n"
+        "void main() {\n"
+        "   outputColour = texture(texUnit, theCoords);\n"
+        "}\n" };
+    glShaderSource(fragmentShaderId, 1, fragmentShaderProgram, NULL);
+    glCompileShader(fragmentShaderId);
+    glGetShaderiv(fragmentShaderId, GL_COMPILE_STATUS, &shaderCompiled);
+    if (shaderCompiled != GL_TRUE) {
+        fprintf(stderr, "clib/multiimgrotator.c: fatal error: "
+            "fragment shader compilation failed.");
+        exit(1);
+    }
+    glAttachShader(drawShadersProgramId, fragmentShaderId);
+ 
+    glLinkProgram(drawShadersProgramId);
+    GLint shaderLinked;
+    glGetProgramiv(drawShadersProgramId, GL_LINK_STATUS, &shaderLinked);
+    if (shaderLinked != GL_TRUE) {
+        fprintf(stderr, "clib/multiimgrotator.c: fatal error: "
+            "linking shader code failed.");
+        exit(1);
+    }
+
+    vertexPos2DAttrLocation = glGetAttribLocation(
+        drawShadersProgramId, "LVertexPos2D");
+    if (vertexPos2DAttrLocation == -1) {
+        fprintf(stderr, "clib/multiimgrotator.c: fatal error: "
+            "failed to obtain LVertexPos2D attribute");
+        exit(1);
+    }
+    UVattribAttrLocation = glGetAttribLocation(
+        drawShadersProgramId, "texCoords"); 
+    if (UVattribAttrLocation == -1) {
+        fprintf(stderr, "clib/multiimgrotator.c: fatal error: "
+            "failed to obtain texCoords attribute");
+        exit(1);
+    }
+
+    uniformShaderTexParam = glGetUniformLocation(
+        drawShadersProgramId, "texUnit");
 }
 
 void multiimgrotator_Draw() {
+    // Make sure everything is initialized:
+    multiimgrotator_InitDraw();
+
     // Prepare window:
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Render images with all transformations applied:
-     
+    struct imageinfo *iinfo = images;
+    while (iinfo != NULL) {
+        if (!iinfo->data)
+            continue;
+
+        // Make sure VBO is up to date:
+        multiimgrotator_UpdateVBO(iinfo);
+
+        // Upload texture if not present:
+        if (!iinfo->textureset) {
+            iinfo->textureset = 1;
+            glGenTextures(1, &iinfo->texture);
+            glBindTexture(GL_TEXTURE_2D, iinfo->texture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_R8,
+                iinfo->w, iinfo->h, 0, GL_R8, GL_UNSIGNED_BYTE,
+                iinfo->data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+
+        // Set texture active and draw:
+        glUseProgram(drawShadersProgramId);
+        glBindVertexArray(iinfo->VAObufId);
+        glEnableVertexArrayAttrib(iinfo->VAObufId, vertexPos2DAttrLocation);
+        glEnableVertexArrayAttrib(iinfo->VAObufId, UVattribAttrLocation);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, iinfo->texture);
+        glUniform1i(uniformShaderTexParam, 0);
+        glDrawArrays(GL_TRIANGLES, 0, 4);
+        glDisableVertexAttribArray(vertexPos2DAttrLocation);
+        glUseProgram(0);
+
+        iinfo = iinfo->next;
+    }
 }
 
 
