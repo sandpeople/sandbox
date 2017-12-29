@@ -2,6 +2,7 @@
 #include <float.h>
 #include <GL/glew.h>
 #include <limits.h>
+#include <math.h>
 
 #include "multiimgrotator.h"
 #include "vmath.h"
@@ -16,6 +17,10 @@ struct imageinfo {
     double offset_x, offset_y, offset_z;
     double rotation_x, rotation_y, rotation_z;
     struct imageinfo *next, *prev;
+
+    int points_cached;
+    double _p1x, _p1y, _p1z, _p2x, _p2y, _p2z;
+    double _p3x, _p3y, _p3z, _p4x, _p4y, _p4z;
 
     int vbooutdated;
     int vboset;
@@ -37,6 +42,9 @@ static void multiimgrotator_ComputeImageCornerPositions(
     vmath_rotatePos(p1x, p1y, p1z,
         iinfo->rotation_x, iinfo->rotation_y, iinfo->rotation_z,
         &p1x, &p1y, &p1z);
+    p1x += iinfo->offset_x;
+    p1y += iinfo->offset_y;
+    p1z += iinfo->offset_z;
 
     // Compute point 2:
     double p2x = -iinfo->size_x * 0.5;
@@ -45,6 +53,9 @@ static void multiimgrotator_ComputeImageCornerPositions(
     vmath_rotatePos(p2x, p2y, p2z,
         iinfo->rotation_x, iinfo->rotation_y, iinfo->rotation_z,
         &p2x, &p2y, &p2z);
+    p2x += iinfo->offset_x;
+    p2y += iinfo->offset_y;
+    p2z += iinfo->offset_z;
 
     // Compute point 3:
     double p3x = -iinfo->size_x * 0.5;
@@ -53,6 +64,9 @@ static void multiimgrotator_ComputeImageCornerPositions(
     vmath_rotatePos(p1x, p1y, p1z,
         iinfo->rotation_x, iinfo->rotation_y, iinfo->rotation_z,
         &p3x, &p3y, &p3z);
+    p3x += iinfo->offset_x;
+    p3y += iinfo->offset_y;
+    p3z += iinfo->offset_z;
 
     // Compute point 4:
     double p4x = iinfo->size_x * 0.5;
@@ -61,20 +75,37 @@ static void multiimgrotator_ComputeImageCornerPositions(
     vmath_rotatePos(p1x, p1y, p1z,
         iinfo->rotation_x, iinfo->rotation_y, iinfo->rotation_z,
         &p4x, &p4y, &p4z);
+    p4x += iinfo->offset_x;
+    p4y += iinfo->offset_y;
+    p4z += iinfo->offset_z;
 
     // Return result:
     *c1x = p1x;
     *c1y = p1y;
     *c1z = p1z;
-    *c2x = p1x;
-    *c2y = p1y;
-    *c2z = p1z;
-    *c3x = p1x;
-    *c3y = p1y;
-    *c3z = p1z;
-    *c4x = p1x;
-    *c4y = p1y;
-    *c4z = p1z;
+    *c2x = p2x;
+    *c2y = p2y;
+    *c2z = p2z;
+    *c3x = p3x;
+    *c3y = p3y;
+    *c3z = p3z;
+    *c4x = p4x;
+    *c4y = p4y;
+    *c4z = p4z;
+}
+
+static void multiimgrotator_ComputePointCache(
+        struct imageinfo *iinfo) {
+    if (iinfo->points_cached)
+        return;
+
+    iinfo->points_cached = 1;
+    multiimgrotator_ComputeImageCornerPositions(
+        iinfo,
+        &iinfo->_p1x, &iinfo->_p1y, &iinfo->_p1z,
+        &iinfo->_p2x, &iinfo->_p2y, &iinfo->_p2z,
+        &iinfo->_p3x, &iinfo->_p3y, &iinfo->_p3z,
+        &iinfo->_p4x, &iinfo->_p4y, &iinfo->_p4z);
 }
 
 void multiimgrotator_WorldBoundaries(
@@ -93,7 +124,55 @@ void multiimgrotator_WorldBoundaries(
     while (iinfo != NULL) {
         atleastoneimage = 1;
 
-        
+        multiimgrotator_ComputePointCache(iinfo);
+        if (x_min > iinfo->_p1x)
+            x_min = iinfo->_p1x;
+        if (x_max < iinfo->_p1x)
+            x_max = iinfo->_p1x;
+        if (x_min > iinfo->_p2x)
+            x_min = iinfo->_p2x;
+        if (x_max < iinfo->_p2x)
+            x_max = iinfo->_p2x;
+        if (x_min > iinfo->_p3x)
+            x_min = iinfo->_p3x;
+        if (x_max < iinfo->_p3x)
+            x_max = iinfo->_p3x;
+        if (x_min > iinfo->_p4x)
+            x_min = iinfo->_p4x;
+        if (x_max < iinfo->_p4x)
+            x_max = iinfo->_p4x;
+        if (y_min > iinfo->_p1y)
+            y_min = iinfo->_p1y;
+        if (y_max < iinfo->_p1y)
+            y_max = iinfo->_p1y;
+        if (y_min > iinfo->_p2y)
+            y_min = iinfo->_p2y;
+        if (y_max < iinfo->_p2y)
+            y_max = iinfo->_p2y;
+        if (y_min > iinfo->_p3y)
+            y_min = iinfo->_p3y;
+        if (y_max < iinfo->_p3y)
+            y_max = iinfo->_p3y;
+        if (y_min > iinfo->_p4y)
+            y_min = iinfo->_p4y;
+        if (y_max < iinfo->_p4y)
+            y_max = iinfo->_p4y;
+        if (z_min > iinfo->_p1z)
+            z_min = iinfo->_p1z;
+        if (z_max < iinfo->_p1z)
+            z_max = iinfo->_p1z;
+        if (z_min > iinfo->_p2z)
+            z_min = iinfo->_p2z;
+        if (z_max < iinfo->_p2z)
+            z_max = iinfo->_p2z;
+        if (z_min > iinfo->_p3z)
+            z_min = iinfo->_p3z;
+        if (z_max < iinfo->_p3z)
+            z_max = iinfo->_p3z;
+        if (z_min > iinfo->_p4z)
+            z_min = iinfo->_p4z;
+        if (z_max < iinfo->_p4z)
+            z_max = iinfo->_p4z;
 
         iinfo = iinfo->next;
     }
@@ -178,8 +257,15 @@ void multiimgrotator_ScaleImage(int id, double size_x, double size_y) {
             if (size_y < 0.00001) {
                 size_y = 0.00001;
             }
-            iinfo->size_x = size_x;
-            iinfo->size_y = size_y;
+            double old_scale_x = iinfo->size_x;
+            double old_scale_y = iinfo->size_y;
+            if (fabs(old_scale_x - iinfo->size_x) > 0.001 ||
+                    fabs(old_scale_y - iinfo->size_y)) {
+                iinfo->size_x = size_x;
+                iinfo->size_y = size_y;
+                iinfo->points_cached = 0;
+                iinfo->vbooutdated = 1;
+            }
             return;
         }
         iinfo = iinfo->next;
@@ -205,6 +291,7 @@ void multiimgrotator_TranslateImage(int id,
             iinfo->rotation_y = rotation_euler_y;
             iinfo->rotation_z = rotation_euler_z;
             iinfo->vbooutdated = 1;
+            iinfo->points_cached = 0;
             return;
         }
         iinfo = iinfo->next;
