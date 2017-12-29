@@ -6,6 +6,7 @@ import os
 import json
 from jinja2 import Environment, FileSystemLoader
 import clib_interface
+from time import sleep, time
 
 height = 300
 width  = 400
@@ -57,7 +58,7 @@ class sandcontrol(object):
             liste = kinects
         elif type == "beamer":
             liste = beamer
-        else
+        else:
             raise
 
         if search == "id":
@@ -87,7 +88,7 @@ class sandcontrol(object):
             data={}
             data["state"] = state
             data["type"] = type
-            data["tmp_token"] = 
+            data["tmp_token"] = time()
             if request.method == "POST":
                 data["body"] = cherrypy.request.body.read()
             cqueue.put(data)

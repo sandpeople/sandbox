@@ -18,7 +18,7 @@ beamer =[]
 pqueue=Queue(maxsize=1)
 ## init command_queue
 cqueue=Queue()
-server=server.sandcontrol(pqueue=pqueue, cqueue=cqueue, kinects, beamer)
+server=server.sandcontrol(pqueue=pqueue, cqueue=cqueue, kinects=kinects, beamer=beamer)
 serverd=threading.Thread(target = server.launch_control, args=(pqueue,))
 serverd.daemon = True
 serverd.start()
@@ -33,9 +33,10 @@ map_offset_y = 0.0
 map_zoom = 1.0
 
 # initiate simulation
-clib_interface.set_height_config(height_shift, height_scale)
-clib_interface.reset_map_drag()
-clib_interface.drag_map(map_offset_x, map_offset_y)
+sandbox_sim = clib_interface.SandboxSimulation()
+sandbox_sim.set_height_config(height_shift, height_scale)
+sandbox_sim.reset_map_drag()
+sandbox_sim.drag_map(map_offset_x, map_offset_y)
 
 # prepare target pic
 cimg = Image.new("L", (screen_resolution_x,screen_resolution_y), color=0)
@@ -53,4 +54,5 @@ while True:
                 new_beamer=clients.beamer_client(id=len(beamer), data=data)
                 beamer.append(new_beamer)
     else:
+        sandbox_sim.simulate(img, cimg)
         sleep(1)
