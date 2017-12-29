@@ -7,6 +7,7 @@ import numpy as np
 import httplib
 from PIL import Image
 from time import sleep
+import StringIO
 
 host="127.0.0.1"
 port="8080"
@@ -25,7 +26,9 @@ def get_image():
         img = get_depth()
     else:
         # Apparently, no kinect around. take static test image instead:
-        img = Image.open('images/kinect.png')
+        pic = Image.open('images/kinect.png')
+        # convert to kinect format
+        img = np.array(pic)
     return img
 
 def connect():
@@ -41,13 +44,17 @@ def connect():
     sleep(1)
     h.request("GET", "/client/", None, headers)
     r = h.getresponse()
-    token = r.read()
+    res = r.read()
+    token, id = res.split("|#|")
     print "got token " + token
-    return (h, token)
+    return (h, token, id)
 
-def send_image(img, h, token):
-    headers = {"Content-type": "json", "state": "connected", "type": "kinect", "token": token }
+def send_image(img, h, token, id):
+    headers = {"Content-type": "application/octet-stream", "State": "connected", "Type": "kinect", "Token": token , "Id": id}
     h.request("POST", "/client/", img, headers) 
+    sleep(5)
+    r = h.getresponse()
+    print "returnstatus " + str(r.status)
 
 # check if we have a kinect:
 no_kinect = False
@@ -60,12 +67,14 @@ except TypeError:
 img = get_image()
 run=True
 
-connection, token = connect()
+connection, token, id = connect()
+buf=StringIO.StringIO()
 
 while run is True:
     # Take kinect image if we have one:
     img = get_image()
-    send_image(img, connection, token)
-    img.save("webroot/k1.jpg", "JPEG", quality=80, optimize=True, progressive=True)
+    #img.save(buf)
+    send_image(img, connection, token, id)
+    #img.save("webroot/k1.jpg", "JPEG", quality=80, optimize=True, progressive=True)
 
 

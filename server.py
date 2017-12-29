@@ -54,6 +54,7 @@ class sandcontrol(object):
         return self.picture
 
     def find_client(self, id, token, type, search="id"):
+        print "searching for id:%s token:%s type:%s search:%s" %(id, token, type, search)
         if not self.uqueue.empty():
             self.kinects, self.beamer = self.uqueue.get()
         if type == "kinect":
@@ -62,10 +63,11 @@ class sandcontrol(object):
             liste = self.beamer
         else:
             raise
+        print "in liste %s" %liste
         if search == "id":
             for client in liste:
-                if client.id == id:
-                    if client.token == token:
+                if str(client.id) == str(id):
+                    if str(client.token) == str(token):
                         return client
                     else:
                         return False
@@ -80,14 +82,14 @@ class sandcontrol(object):
         state=cherrypy.request.headers.get("State", None)
         type=cherrypy.request.headers.get("Type", None)
         id=cherrypy.request.headers.get("Id", -1)
-        print "state " + state
         if state == "init":
+            print "client connecting"
             tToken=cherrypy.request.headers.get("Tmp-Token")
             if tToken:
-                print "client has Tmp-Token"
                 client=self.find_client(id, tToken, type, search="token")
                 if client:
-                    return client.token
+                    print "client %s connected" %client.id
+                    return "%s|#|%s" %(client.token, client.id)
                 else:
                     print "no such client"
                     return
@@ -103,17 +105,22 @@ class sandcontrol(object):
             print "connected client"
             client = self.find_client(id, cherrypy.request.headers.get("token", ""), type)
             if client == False:
-                return 403
+                print "wrong token"
+                return "403"
             elif client == None:
-                return 404
-
+                print "client not found"
+                return "404"
+            print "client %s" %client.id
             # if posting client wants to send pictures
-            if request.method == "POST" and type == "kinect":
+            if cherrypy.request.method == "POST" and type == "kinect":
+                print "receive image"
+                print cherrypy.request.process_request_body
                 try:
-                    client.ingressq.put(cherrypy.request.body.read(), block=False)
+                    tmp=cherrypy.request.body.read()
+                    client.ingressq.put(tmp, block=False)
                 except Queue.Full:
                     # send "Too Many Requests" to signal client to throttle
-                    return 429
+                    return "429"
                 except:
                     raise
                 return 200
@@ -123,17 +130,17 @@ class sandcontrol(object):
                     img = client.egressq.get(block=False)
                 except Queue.Empty:
                     # send "Too Many Requests" to signal client to throttle
-                    return 429
+                    return "429"
                 except:
                     raise
                 return img
-                
+            return "404" 
             
         elif state == "disconnect":
-            return 401
+            return "401"
  
         else:
-            return 404
+            return "404"
 
     def launch_control(self, pqueue, cqueue, kinects, beamer, uqueue):
         start(pqueue, cqueue, kinects, beamer, uqueue)
