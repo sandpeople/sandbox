@@ -1,4 +1,4 @@
-#/usr/bin/python
+#!/usr/bin/python
 
 import os,sys
 from pylib import clients
@@ -11,7 +11,7 @@ from time import sleep, time
 
 # set client lists
 kinects=[]
-beamer =[]
+beamer=[]
 
 # start webserver
 ## init picture_queue
