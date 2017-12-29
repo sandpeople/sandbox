@@ -4,13 +4,14 @@
 #include <limits.h>
 
 #include "multiimgrotator.h"
+#include "vmath.h"
 
 static int last_id = -1;
 
 struct imageinfo {
     int id;
     size_t w, h;
-    double scale_x, scale_y;
+    double size_x, size_y;
     double center_x, center_y, center_z;
     double offset_x, offset_y, offset_z;
     double rotation_x, rotation_y, rotation_z;
@@ -22,6 +23,59 @@ struct imageinfo {
     GLuint IBObufId;
 };
 static struct imageinfo *images = NULL;
+
+static void multiimgrotator_ComputeImageCornerPositions(
+        struct imageinfo *iinfo,
+        double *c1x, double *c1y, double *c1z,
+        double *c2x, double *c2y, double *c2z,
+        double *c3x, double *c3y, double *c3z,
+        double *c4x, double *c4y, double *c4z) {
+    // Compute point 1:
+    double p1x = iinfo->size_y * 0.5;
+    double p1y = 0.0;
+    double p1z = iinfo->size_x * 0.5;
+    vmath_rotatePos(p1x, p1y, p1z,
+        iinfo->rotation_x, iinfo->rotation_y, iinfo->rotation_z,
+        &p1x, &p1y, &p1z);
+
+    // Compute point 2:
+    double p2x = -iinfo->size_x * 0.5;
+    double p2y = 0;
+    double p2z = iinfo->size_y * 0.5;
+    vmath_rotatePos(p2x, p2y, p2z,
+        iinfo->rotation_x, iinfo->rotation_y, iinfo->rotation_z,
+        &p2x, &p2y, &p2z);
+
+    // Compute point 3:
+    double p3x = -iinfo->size_x * 0.5;
+    double p3y = 0;
+    double p3z = -iinfo->size_y * 0.5;
+    vmath_rotatePos(p1x, p1y, p1z,
+        iinfo->rotation_x, iinfo->rotation_y, iinfo->rotation_z,
+        &p3x, &p3y, &p3z);
+
+    // Compute point 4:
+    double p4x = iinfo->size_x * 0.5;
+    double p4y = 0;
+    double p4z = -iinfo->size_y * 0.5;
+    vmath_rotatePos(p1x, p1y, p1z,
+        iinfo->rotation_x, iinfo->rotation_y, iinfo->rotation_z,
+        &p4x, &p4y, &p4z);
+
+    // Return result:
+    *c1x = p1x;
+    *c1y = p1y;
+    *c1z = p1z;
+    *c2x = p1x;
+    *c2y = p1y;
+    *c2z = p1z;
+    *c3x = p1x;
+    *c3y = p1y;
+    *c3z = p1z;
+    *c4x = p1x;
+    *c4y = p1y;
+    *c4z = p1z;
+}
 
 void multiimgrotator_WorldBoundaries(
         double *x_min_output, double *x_max_output,
@@ -38,7 +92,9 @@ void multiimgrotator_WorldBoundaries(
     struct imageinfo *iinfo = images;
     while (iinfo != NULL) {
         atleastoneimage = 1;
+
         
+
         iinfo = iinfo->next;
     }
 
@@ -100,8 +156,8 @@ int multiimgrotator_AddImage(size_t w, size_t h) {
     // Add image to list:
     struct imageinfo *iinfo = malloc(sizeof(*iinfo));
     memset(iinfo, 0, sizeof(*iinfo));
-    iinfo->scale_x = 1.0;
-    iinfo->scale_y = 1.0;
+    iinfo->size_x = 1.0;
+    iinfo->size_y = 1.0;
     iinfo->w = w;
     iinfo->h = h;
     iinfo->id = id;
@@ -112,18 +168,18 @@ int multiimgrotator_AddImage(size_t w, size_t h) {
     return iinfo->id;
 }
 
-void multiimgrotator_ScaleImage(int id, double scale_x, double scale_y) {
+void multiimgrotator_ScaleImage(int id, double size_x, double size_y) {
     struct imageinfo *iinfo = images;
     while (iinfo != NULL) {
         if (iinfo->id == id) {
-            if (scale_x < 0.00001) {
-                scale_x = 0.00001;
+            if (size_x < 0.00001) {
+                size_x = 0.00001;
             }
-            if (scale_y < 0.00001) {
-                scale_y = 0.00001;
+            if (size_y < 0.00001) {
+                size_y = 0.00001;
             }
-            iinfo->scale_x = scale_x;
-            iinfo->scale_y = scale_y;
+            iinfo->size_x = size_x;
+            iinfo->size_y = size_y;
             return;
         }
         iinfo = iinfo->next;
