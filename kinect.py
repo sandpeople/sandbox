@@ -6,6 +6,7 @@ import sys,os
 import numpy as np
 import httplib
 from PIL import Image
+from time import sleep
 
 host="127.0.0.1"
 port="8080"
@@ -35,10 +36,18 @@ def connect():
     h.request("GET", "/client/", None, headers)
     print "sent"
     r = h.getresponse()
-    headers["tmp_token"]=r.read()
+    headers["Tmp-Token"]=str(r.read())
+    print "got Tmp-Token: "+ headers["Tmp-Token"]
+    sleep(1)
     h.request("GET", "/client/", None, headers)
     r = h.getresponse()
-    print r.read()
+    token = r.read()
+    print "got token " + token
+    return (h, token)
+
+def send_image(img, h, token):
+    headers = {"Content-type": "json", "state": "connected", "type": "kinect", "token": token }
+    h.request("POST", "/client/", img, headers) 
 
 # check if we have a kinect:
 no_kinect = False
@@ -51,12 +60,12 @@ except TypeError:
 img = get_image()
 run=True
 
-connect()
+connection, token = connect()
 
 while run is True:
     # Take kinect image if we have one:
     img = get_image()
-
+    send_image(img, connection, token)
     img.save("webroot/k1.jpg", "JPEG", quality=80, optimize=True, progressive=True)
 
 

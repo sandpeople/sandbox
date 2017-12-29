@@ -6,7 +6,7 @@ import clib_interface
 import server
 import threading
 from PIL import Image
-from Queue import Queue
+import Queue
 from time import sleep, time
 
 # set client lists
@@ -15,11 +15,13 @@ beamer =[]
 
 # start webserver
 ## init picture_queue
-pqueue=Queue(maxsize=1)
+pqueue=Queue.Queue(maxsize=1)
 ## init command_queue
-cqueue=Queue()
-server=server.sandcontrol(pqueue, cqueue, kinects, beamer)
-serverd=threading.Thread(target = server.launch_control, args=(pqueue, cqueue, kinects, beamer))
+cqueue=Queue.Queue()
+## init client update queue
+uqueue=Queue.LifoQueue(maxsize=1)
+server=server.sandcontrol(pqueue, cqueue, kinects, beamer, uqueue)
+serverd=threading.Thread(target = server.launch_control, args=(pqueue, cqueue, kinects, beamer, uqueue))
 serverd.daemon = True
 serverd.start()
 
@@ -51,10 +53,18 @@ while True:
                 print "new kinect"
                 new_kinect=clients.kinect_client(id=len(kinects), data=data)
                 kinects.append(new_kinect)
+                try:
+                    uqueue.put((kinects, beamer), block=False)
+                except Queue.Full:
+                    pass
             elif request["type"] == "beamer":
                 print "new beamer"
                 new_beamer=clients.beamer_client(id=len(beamer), data=data)
                 beamer.append(new_beamer)
+                try:
+                    uqueue.put((kinects, beamer), block=False)
+                except Queue.Full:
+                    pass
     else:
         #sandbox_sim.simulate(img, cimg)
         sleep(1)

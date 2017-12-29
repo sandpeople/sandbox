@@ -12,9 +12,10 @@ height = 300
 width  = 400
 
 class sandcontrol(object):
-    def __init__(self, pqueue, cqueue, kinects, beamer):
+    def __init__(self, pqueue, cqueue, kinects, beamer, uqueue):
         self.pqueue = pqueue
         self.cqueue = cqueue
+        self.uqueue = uqueue
         self.kinects = kinects
         self.beamer = beamer
         self.picture = None
@@ -43,8 +44,7 @@ class sandcontrol(object):
         cherrypy.response.headers['Content-Type'] = "image/jpeg"
         if not self.pqueue.empty():
             try:
-                cv2.imwrite('webroot/map.jpg', self.pqueue.get(block=False), [int(cv2.IMWRITE_JPEG_QUALITY), 10])
-                self.picture = None
+                self.picture = self.pqueue.get(block=False)
             except:
                 pass
 
@@ -54,37 +54,43 @@ class sandcontrol(object):
         return self.picture
 
     def find_client(self, id, token, type, search="id"):
+        if not self.uqueue.empty():
+            self.kinects, self.beamer = self.uqueue.get()
         if type == "kinect":
-            liste = kinects
+            liste = self.kinects
         elif type == "beamer":
-            liste = beamer
+            liste = self.beamer
         else:
             raise
-
         if search == "id":
-            for client in self.liste:
+            for client in liste:
                 if client.id == id:
                     if client.token == token:
                         return client
                     else:
                         return False
         elif search == "token":
-            for client in self.liste:
+            for client in liste:
                 if client.tmp_token == token:
                     return client 
         return None
 
     @cherrypy.expose
     def client(self):
-        state=cherrypy.request.headers.get("state", None)
-        type=cherrypy.request.headers.get("type", None)
-        id=cherrypy.request.headers.get("id", -1)
+        state=cherrypy.request.headers.get("State", None)
+        type=cherrypy.request.headers.get("Type", None)
+        id=cherrypy.request.headers.get("Id", -1)
+        print "state " + state
         if state == "init":
-            tmp_token=cherrypy.request.headers.get("tmp_token")
-            if tmp_token:
-                client=self.find_client(id, tmp_token, type, search="token")
+            tToken=cherrypy.request.headers.get("Tmp-Token")
+            if tToken:
+                print "client has Tmp-Token"
+                client=self.find_client(id, tToken, type, search="token")
                 if client:
                     return client.token
+                else:
+                    print "no such client"
+                    return
             data={}
             data["state"] = state
             data["type"] = type
@@ -94,6 +100,7 @@ class sandcontrol(object):
             self.cqueue.put(data)
             return data["tmp_token"]
         elif state == "connected":
+            print "connected client"
             client = self.find_client(id, cherrypy.request.headers.get("token", ""), type)
             if client == False:
                 return 403
@@ -128,10 +135,10 @@ class sandcontrol(object):
         else:
             return 404
 
-    def launch_control(self, pqueue, cqueue, kinects, beamer):
-        start(pqueue, cqueue, kinects, beamer)
+    def launch_control(self, pqueue, cqueue, kinects, beamer, uqueue):
+        start(pqueue, cqueue, kinects, beamer, uqueue)
 
-def start(pqueue, cqueue, kinects, beamer):
+def start(pqueue, cqueue, kinects, beamer, uqueue):
     global tmpl
     CURDIR = os.getcwd()
     staticdir = CURDIR+"/webroot"
@@ -142,5 +149,5 @@ def start(pqueue, cqueue, kinects, beamer):
         "tools.staticdir.on" : True
         })
     cherrypy.server.socket_host = "0.0.0.0"
-    cherrypy.quickstart(sandcontrol(pqueue, cqueue, kinects, beamer))
+    cherrypy.quickstart(sandcontrol(pqueue, cqueue, kinects, beamer, uqueue))
 
