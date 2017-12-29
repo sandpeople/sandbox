@@ -108,6 +108,26 @@ static void multiimgrotator_ComputePointCache(
         &iinfo->_p4x, &iinfo->_p4y, &iinfo->_p4z);
 }
 
+static inline void boundaryupdate(double *x_min, double *x_max,
+        double *y_min, double *y_max,
+        double *z_min, double *z_max,
+        double px, double py, double pz) {
+    if (*x_min > px)
+        *x_min = px;
+    if (*x_max < px)
+        *x_max = px;
+    if (*y_min > py)
+        *y_min = py;
+    if (*y_max < py)
+        *y_max = py;
+    if (*z_min > pz)
+        *z_min = pz;
+    if (*z_max < pz)
+        *z_max = pz;
+}
+
+/// Computes the boundaries of the world as axis-aligned
+/// bounding box that contains all rotated images.
 void multiimgrotator_WorldBoundaries(
         double *x_min_output, double *x_max_output,
         double *y_min_output, double *y_max_output,
@@ -119,64 +139,31 @@ void multiimgrotator_WorldBoundaries(
     double z_min = DBL_MAX;
     double z_max = DBL_MIN;
 
+    // Loop through images and compute boundaries:
     int atleastoneimage = 0;
     struct imageinfo *iinfo = images;
     while (iinfo != NULL) {
         atleastoneimage = 1;
 
         multiimgrotator_ComputePointCache(iinfo);
-        if (x_min > iinfo->_p1x)
-            x_min = iinfo->_p1x;
-        if (x_max < iinfo->_p1x)
-            x_max = iinfo->_p1x;
-        if (x_min > iinfo->_p2x)
-            x_min = iinfo->_p2x;
-        if (x_max < iinfo->_p2x)
-            x_max = iinfo->_p2x;
-        if (x_min > iinfo->_p3x)
-            x_min = iinfo->_p3x;
-        if (x_max < iinfo->_p3x)
-            x_max = iinfo->_p3x;
-        if (x_min > iinfo->_p4x)
-            x_min = iinfo->_p4x;
-        if (x_max < iinfo->_p4x)
-            x_max = iinfo->_p4x;
-        if (y_min > iinfo->_p1y)
-            y_min = iinfo->_p1y;
-        if (y_max < iinfo->_p1y)
-            y_max = iinfo->_p1y;
-        if (y_min > iinfo->_p2y)
-            y_min = iinfo->_p2y;
-        if (y_max < iinfo->_p2y)
-            y_max = iinfo->_p2y;
-        if (y_min > iinfo->_p3y)
-            y_min = iinfo->_p3y;
-        if (y_max < iinfo->_p3y)
-            y_max = iinfo->_p3y;
-        if (y_min > iinfo->_p4y)
-            y_min = iinfo->_p4y;
-        if (y_max < iinfo->_p4y)
-            y_max = iinfo->_p4y;
-        if (z_min > iinfo->_p1z)
-            z_min = iinfo->_p1z;
-        if (z_max < iinfo->_p1z)
-            z_max = iinfo->_p1z;
-        if (z_min > iinfo->_p2z)
-            z_min = iinfo->_p2z;
-        if (z_max < iinfo->_p2z)
-            z_max = iinfo->_p2z;
-        if (z_min > iinfo->_p3z)
-            z_min = iinfo->_p3z;
-        if (z_max < iinfo->_p3z)
-            z_max = iinfo->_p3z;
-        if (z_min > iinfo->_p4z)
-            z_min = iinfo->_p4z;
-        if (z_max < iinfo->_p4z)
-            z_max = iinfo->_p4z;
+        boundaryupdate(&x_min, &x_max, &y_min, &y_max,
+            &z_min, &z_max,
+            iinfo->_p1x, iinfo->_p1y, iinfo->_p1z);
+        boundaryupdate(&x_min, &x_max, &y_min, &y_max,
+            &z_min, &z_max,
+            iinfo->_p2x, iinfo->_p2y, iinfo->_p2z);
+        boundaryupdate(&x_min, &x_max, &y_min, &y_max,
+            &z_min, &z_max,
+            iinfo->_p3x, iinfo->_p3y, iinfo->_p3z);
+        boundaryupdate(&x_min, &x_max, &y_min, &y_max,
+            &z_min, &z_max,
+            iinfo->_p4x, iinfo->_p4y, iinfo->_p4z);
 
         iinfo = iinfo->next;
     }
 
+    // If we don't have an image, we didn't compute any proper min/max values.
+    // Just give default dimensions then:
     if (!atleastoneimage) {
         *x_min_output = -0.5;
         *x_max_output = 0.5;
@@ -186,6 +173,14 @@ void multiimgrotator_WorldBoundaries(
         *z_max_output = 0.5;
         return;
     }
+
+    // Output the final values:
+    *x_min_output = x_min;
+    *x_min_output = x_min;
+    *y_min_output = y_min;
+    *y_min_output = y_min;
+    *z_min_output = z_min;
+    *z_min_output = z_min;
 }
 
 void multiimgrotator_FreeImage(struct imageinfo *iinfo) {
@@ -207,10 +202,38 @@ void multiimgrotator_UpdateVBO(struct imageinfo *iinfo) {
         glDeleteBuffers(1, &iinfo->IBObufId);
     }
 
-    // Vertex positions:
-    GLfloat vertexPositions[8];
+    // Obtain world boundaries:
+    double x_min, x_max;
+    double y_min, y_max;
+    double z_min, z_max;
+    multiimgrotator_WorldBoundaries(
+        &x_min, &x_max, &y_min, &y_max,
+        &z_min, &z_max);
+    double world_size_x = (x_max - x_min);
+    double world_size_y = (y_max - y_min);
+    double world_size_z = (z_max - z_min);
 
-    // UV positions:
+    // Get positions in world space:
+    multiimgrotator_ComputePointCache(iinfo);
+
+    // Vertex positions (for topdown 2D points) and UV:
+    GLfloat vertexPositions[16];
+    vertexPositions[0] = -0.5 + (iinfo->_p1z - z_min) * world_size_z;
+    vertexPositions[1] = -0.5 + (iinfo->_p1x - x_min) * world_size_x;
+    vertexPositions[2] = 0.0; // UV left
+    vertexPositions[3] = 1.0; // UV bottom
+    vertexPositions[4] = -0.5 + (iinfo->_p2z - z_min) * world_size_z;
+    vertexPositions[5] = -0.5 + (iinfo->_p2x - x_min) * world_size_x;
+    vertexPositions[6] = 1.0; // UV right
+    vertexPositions[7] = 1.0; // UV bottom
+    vertexPositions[8] = -0.5 + (iinfo->_p3z - z_min) * world_size_z;
+    vertexPositions[9] = -0.5 + (iinfo->_p3x - x_min) * world_size_x;
+    vertexPositions[10] = 1.0; // UV right
+    vertexPositions[11] = 0.0; // UV top
+    vertexPositions[12] = -0.5 + (iinfo->_p4z - z_min) * world_size_z;
+    vertexPositions[13] = -0.5 + (iinfo->_p4x - x_min) * world_size_x;
+    vertexPositions[14] = 0.0; // UV left
+    vertexPositions[15] = 0.0; // UV left
 
     // Index numbers for polygons:
     GLuint indices[] = { 0, 1, 2, 3 };
