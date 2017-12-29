@@ -4,8 +4,11 @@ from freenect import sync_get_depth
 import frame_convert
 import sys,os
 import numpy as np
+import httplib
+from PIL import Image
 
-URL=""
+host="127.0.0.1"
+port="8080"
 
 def get_depth():
     """ This function obtains the depth image from the kinect, if any is
@@ -13,14 +16,6 @@ def get_depth():
     """
     img = frame_convert.pretty_depth(sync_get_depth()[0])
     return img
-
-# check if we have a kinect:
-no_kinect = False
-try:
-    img = get_depth()
-except TypeError:
-    # nope, no kinect.
-    no_kinect = True
 
 def get_image():
     global no_kinect
@@ -32,14 +27,31 @@ def get_image():
         img = Image.open('images/kinect.png')
     return img
 
+def connect():
+    # init connection to control
+    headers = {"Content-type": "json", "state": "init", "type": "kinect" }
+    h = httplib.HTTPConnection(host, port)
+    print "sending init packet"
+    h.request("GET", "/client/", None, headers)
+    print "sent"
+    r = h.getresponse()
+    headers["tmp_token"]=r.read()
+    h.request("GET", "/client/", None, headers)
+    r = h.getresponse()
+    print r.read()
+
+# check if we have a kinect:
+no_kinect = False
+try:
+    img = get_depth()
+except TypeError:
+    # nope, no kinect.
+    no_kinect = True
+
 img = get_image()
 run=True
 
-# init connection to control
-headers = {"Content-type": "json", "state": "init", "type": "kinect" }
-h = httplib.HTTPConnection(URL)
-h.request("GET", "/client/", None, headers)
-r = h.getresponse()
+connect()
 
 while run is True:
     # Take kinect image if we have one:

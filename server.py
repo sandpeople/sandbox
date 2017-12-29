@@ -88,10 +88,11 @@ class sandcontrol(object):
             data={}
             data["state"] = state
             data["type"] = type
-            data["tmp_token"] = time()
-            if request.method == "POST":
+            data["tmp_token"] = str(time())
+            if cherrypy.request.method == "POST":
                 data["body"] = cherrypy.request.body.read()
-            cqueue.put(data)
+            self.cqueue.put(data)
+            return data["tmp_token"]
         elif state == "connected":
             client = self.find_client(id, cherrypy.request.headers.get("token", ""), type)
             if client == False:

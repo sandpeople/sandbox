@@ -4,6 +4,7 @@ clib.so
 libclib.so
 clib_test/test
 webroot/map.jpg
+webroot/k1.jpg
 *.swp
 *.swo
 *~
