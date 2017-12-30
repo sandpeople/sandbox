@@ -22,7 +22,8 @@ struct inputconfig {
 
 void interface_setInputConfig(int number, const struct inputconfig* config);
 
-void interface_setInputImg(int number, const void *data);
+void interface_setInputImg(int number, const void *data,
+    int columns_rows_swapped);
 
 #endif  // CLIB_INTERFACE_H_
 

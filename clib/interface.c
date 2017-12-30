@@ -249,7 +249,8 @@ void interface_setInputConfig(int number, const struct inputconfig* config) {
     memmove(&inputs[number].config, config, sizeof(*config));
 }
 
-void interface_setInputImg(int number, const void *data) {
+void interface_setInputImg(int number, const void *data,
+        int columns_rows_swapped) {
     if (number < 0 || (size_t)number >= inputs_amount) {
         fprintf(stderr, "clib/interface.c: critical programming error: "
             "interface_setInputImg on invalid input number");

@@ -1,9 +1,10 @@
 
+import copy
 import ctypes
 import os
 
 class SandboxInputConfig(object):
-    def __init__(self, size_x, size_y, height_shift, height_scale):
+    def __init__(self, size_x, size_y, height_shift=0.0, height_scale=1.0):
         self.w = size_x
         self.h = size_y
         self.height_shift = height_shift
@@ -40,10 +41,10 @@ class SandboxSimulation(object):
         self.interface_run.restype = None
         self.interface_setInputImg = self.lib.interface_setInputImg
         self.interface_setInputImg.argtypes = [
-            ctypes.c_int, ctypes.c_void_p]
+            ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
         self.interface_setInputImg.restype = None
 
-    def simulate(self, input_depth_images):
+    def simulate(self, input_depth_images, columns_rows_swapped=False):
         if len(input_depth_images) != len(self._inputs):
             raise ValueError("the provided amount of depth images is " +
                 str(len(input_depth_images)) + ", but the amount of " +
@@ -55,10 +56,15 @@ class SandboxSimulation(object):
         index = -1
         for input_config in self._inputs:
             index += 1
-            assert(input_config.w == input_depth_images[index].shape[0])
-            assert(input_config.h == input_depth_images[index].shape[1])
+            if not columns_rows_swapped:
+                assert(input_config.w == input_depth_images[index].shape[0])
+                assert(input_config.h == input_depth_images[index].shape[1])
+            else:
+                assert(input_config.w == input_depth_images[index].shape[1])
+                assert(input_config.h == input_depth_images[index].shape[0])
             self.interface_setInputImg(index,
-                ctypes.c_void_p(input_depth_images[index].ctypes.data))
+                ctypes.c_void_p(input_depth_images[index].ctypes.data),
+                1 if columns_rows_swapped else 0)
 
         # Call simulation:
         self.interface_run()
@@ -67,11 +73,8 @@ class SandboxSimulation(object):
         for output_config in self._outputs:
             pass
 
-    def set_depth_images(self, images):
-        pass
-
-    def set_input_config(self, inputs):
-        class InputConfigStruct(Structure):
+    def set_inputs(self, inputs):
+        class InputConfigStruct(ctypes.Structure):
             _fields_ = [("w", ctypes.c_size_t),
                         ("h", ctypes.c_size_t),
                         ("world_x", ctypes.c_double),
@@ -89,6 +92,8 @@ class SandboxSimulation(object):
         set_input_amount.argtypes = [ctypes.c_int]
         set_input_amount.restype = None
         set_input_amount(len(inputs))
+        self._inputs = [copy.deepcopy(input_config) for \
+            input_config in inputs]
         index = -1
         for input_config in self._inputs:
             index += 1
@@ -108,7 +113,7 @@ class SandboxSimulation(object):
             set_config.argtypes = [ctypes.c_int,
                 ctypes.POINTER(InputConfigStruct)]
             set_config.restype = None
-            set_config(index, ctypes.POINTER(config))
+            set_config(index, config)
 
     def set_output_config(self, outputs):
         pass
