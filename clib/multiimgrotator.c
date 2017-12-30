@@ -362,6 +362,27 @@ void multiimgrotator_RemoveImage(int id) {
     }
 }
 
+static void multiimgrotator_PrintShaderError(GLint shaderId) {
+    int max_log_length;
+    glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &max_log_length);
+    if (max_log_length > 4096)
+        max_log_length = 4096;
+    int log_length = 0;
+    char *info_log_buf = malloc(max_log_length);
+    if (!info_log_buf) {
+        fprintf(stderr, "clib/multiimgrotator.c: error: "
+            "shader log buffer allocation failed");
+        fflush(stderr);
+        return;
+    }
+    glGetShaderInfoLog(shaderId, max_log_length,
+        &log_length, info_log_buf);
+    fprintf(stderr, "clib/multiimgrotator.c: debug: shader log: "
+        "%s\n", info_log_buf);
+    fflush(stderr);
+    free(info_log_buf);
+}
+
 static GLint vertexPos2DAttrLocation = -1;
 static GLint UVattribAttrLocation = -1;
 static GLuint drawShadersProgramId = 0;
@@ -387,7 +408,8 @@ void multiimgrotator_InitDraw() {
     glGetShaderiv(vertexShaderId, GL_COMPILE_STATUS, &shaderCompiled);
     if (shaderCompiled != GL_TRUE) {
         fprintf(stderr, "clib/multiimgrotator.c: fatal error: "
-            "vertex shader compilation failed.");
+            "vertex shader compilation failed.\n");
+        multiimgrotator_PrintShaderError(vertexShaderId);
         exit(1);
     }
     glAttachShader(drawShadersProgramId, vertexShaderId);
@@ -405,7 +427,8 @@ void multiimgrotator_InitDraw() {
     glGetShaderiv(fragmentShaderId, GL_COMPILE_STATUS, &shaderCompiled);
     if (shaderCompiled != GL_TRUE) {
         fprintf(stderr, "clib/multiimgrotator.c: fatal error: "
-            "fragment shader compilation failed.");
+            "fragment shader compilation failed.\n");
+        fflush(stderr);
         exit(1);
     }
     glAttachShader(drawShadersProgramId, fragmentShaderId);

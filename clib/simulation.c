@@ -50,16 +50,9 @@ void simulation_initialize(int width, int height) {
     fflush(stdout);
     SDL_Init(SDL_INIT_VIDEO);
 
-    glewExperimental = GL_TRUE;
-    GLenum glewError = glewInit();
-    if (glewError != GLEW_OK) {
-        fprintf(stderr, "clib/simulation.c: fatal error: "
-            "glewInit failed: %s\n", glewGetErrorString(glewError));
-        exit(1);
-    }
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 0);
 
     hiddenWindow = SDL_CreateWindow(
@@ -69,10 +62,29 @@ void simulation_initialize(int width, int height) {
         (int)(width * 1.2), (int)(height * 1.2),
         SDL_WINDOW_OPENGL);
     if (!hiddenWindow) {
-        fprintf(stderr, "[simulation.c] FAILED TO INITIALIZE WINDOW");
+        fprintf(stderr, "clib/simulation.c: error: "
+            "FAILED TO INITIALIZE WINDOW");
         exit(1);
         return;
     }
+
+    simulationGLContext = SDL_GL_CreateContext(hiddenWindow );
+    if (simulationGLContext == NULL) {
+        fprintf(stderr, "clib/simulation.c: error: "
+            "OpenGL context could not be created! SDL Error: %s\n",
+            SDL_GetError());
+        exit(1);
+        return;
+    }
+    glewExperimental = GL_TRUE;
+    GLenum glewError = glewInit();
+    if (glewError != GLEW_OK) {
+        fprintf(stderr, "clib/simulation.c: fatal error: "
+            "glewInit failed: %s\n", glewGetErrorString(glewError));
+        exit(1);
+        return;
+    }
+
     acceleratedRenderer = SDL_CreateRenderer(hiddenWindow, -1,
         SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
     if (!acceleratedRenderer) {
