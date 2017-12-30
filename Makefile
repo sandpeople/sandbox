@@ -11,7 +11,9 @@ endif
 
 all: libfreenect libfreenect2 build
 
-build: build-essentials
+build: build-essentials build-clib
+
+build-clib:
 	cd clib && make
 
 build-essentials:
