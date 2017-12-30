@@ -409,6 +409,7 @@ void multiimgrotator_InitDraw() {
     if (shaderCompiled != GL_TRUE) {
         fprintf(stderr, "clib/multiimgrotator.c: fatal error: "
             "vertex shader compilation failed.\n");
+        fflush(stderr);
         multiimgrotator_PrintShaderError(vertexShaderId);
         exit(1);
     }
@@ -429,6 +430,7 @@ void multiimgrotator_InitDraw() {
         fprintf(stderr, "clib/multiimgrotator.c: fatal error: "
             "fragment shader compilation failed.\n");
         fflush(stderr);
+        multiimgrotator_PrintShaderError(fragmentShaderId);
         exit(1);
     }
     glAttachShader(drawShadersProgramId, fragmentShaderId);
