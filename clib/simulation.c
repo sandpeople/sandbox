@@ -46,10 +46,17 @@ void simulation_initialize(int width, int height) {
         return;
     }
 
+    printf("clib/simulation.c: info: simulation_initialize called.\n");
+    fflush(stdout);
     SDL_Init(SDL_INIT_VIDEO);
 
     glewExperimental = GL_TRUE;
-    glewInit();
+    GLenum glewError = glewInit();
+    if (glewError != GLEW_OK) {
+        fprintf(stderr, "clib/simulation.c: fatal error: "
+            "glewInit failed: %s\n", glewGetErrorString(glewError));
+        exit(1);
+    }
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );

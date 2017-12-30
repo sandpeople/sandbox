@@ -38,6 +38,8 @@ size_t inputs_amount = 0;
 static void *interface_mainComputeThread(
             __attribute__((unused)) void *userdata
         ) {
+    printf("clib/interface.c: debug: main compute thread init\n");
+    fflush(stdout);
     while (!shutdown_signal) {
         // Get depth input data:
         pthread_mutex_lock(main_compute_data_access);
@@ -45,15 +47,15 @@ static void *interface_mainComputeThread(
             xsize * ysize * 1);
         pthread_mutex_unlock(main_compute_data_access);
 
-        // Draw depth input data properly:
-        multiimgrotator_Draw();
-
         // Make sure everything is initialized:
         simulation_initialize(xsize, ysize);
         assert(gradient_x > 0);
         images_init_simulation_image(xsize, ysize);
         fluid_init(xsize, ysize);
         topology_init(xsize, ysize);
+
+        // Draw depth input data properly:
+        multiimgrotator_Draw();
 
         // Draw basic topology coloring:
         simulation_lockSurface();
@@ -136,12 +138,15 @@ void interface_run(const void *depth_array_v, void *output_colors_v) {
         main_compute_thread = malloc(sizeof(*main_compute_thread));
         xsize = _xsize;
         ysize = _ysize;
-        printf("[clib/interfacae.c] SCREEN DIMENSIONS: %d, %d\n",
+        printf("[clib/interface.c] SCREEN DIMENSIONS: %d, %d\n",
             xsize, ysize);
         pthread_create(
             main_compute_thread, NULL,
             interface_mainComputeThread, NULL);
     }
+
+    // We have to wait until the simulation is initialized:
+    sleep(1);
 
     // Lock data access, update depth buffer and copy back colors:
     if (xsize != _xsize || ysize != _ysize) {
